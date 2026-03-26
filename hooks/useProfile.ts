@@ -1,0 +1,42 @@
+import { useState, useEffect, useCallback } from 'react';
+import { getUserProfile, saveUserProfile, UserProfile } from '../lib/database';
+
+interface UseProfileReturn {
+  profile: UserProfile | null;
+  loading: boolean;
+  refresh: () => void;
+  updateProfile: (profile: UserProfile) => void;
+}
+
+export default function useProfile(): UseProfileReturn {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    try {
+      const data = getUserProfile();
+      setProfile(data);
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateProfile = useCallback((newProfile: UserProfile) => {
+    try {
+      saveUserProfile(newProfile);
+      setProfile(newProfile);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { profile, loading, refresh, updateProfile };
+}

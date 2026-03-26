@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "マンジャロ管理アプリ",
+    "slug": "manjaro-diet-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "manjaroDietApp",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#EBF5FB"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.manjaro.dietapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#EBF5FB"
+      },
+      "package": "com.manjaro.dietapp"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2980B9"
+        }
+      ],
+      "expo-sqlite"
+    ]
+  }
+}
