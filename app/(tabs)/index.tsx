@@ -14,7 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
 import useProfile from '../../hooks/useProfile';
@@ -57,6 +57,7 @@ function getJapaneseDateString(date: Date): string {
 
 export default function DashboardScreen() {
   const today = formatDate(new Date());
+  const router = useRouter();
   const { profile, loading: profileLoading, refresh: refreshProfile } = useProfile();
   const { currentWeek, currentMessage } = useStepMessages(profile);
 
@@ -309,14 +310,14 @@ export default function DashboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => {/* navigate to nutrition */}}
+            onPress={() => router.navigate('/(tabs)/nutrition')}
           >
             <Ionicons name="restaurant" size={24} color={Colors.secondary} />
             <Text style={styles.quickActionText}>食事記録</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => {/* navigate to injection */}}
+            onPress={() => router.navigate('/(tabs)/injection')}
           >
             <Ionicons name="medical" size={24} color={Colors.accent} />
             <Text style={styles.quickActionText}>投与記録</Text>
