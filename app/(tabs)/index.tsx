@@ -24,14 +24,25 @@ import WeightChart from '../../components/WeightChart';
 import PFCProgressBar from '../../components/PFCProgressBar';
 import { calculatePFC } from '../../lib/pfc';
 import {
-  getWeightLogs,
+  getWeightLogsByDays,
   getMealLogs,
   getInjectionLogs,
   addWeightLog,
+  updateWeightLog,
+  deleteWeightLog,
   WeightLog,
   MealLog,
   InjectionLog,
 } from '../../lib/database';
+
+type ChartRange = '7d' | '1m' | '3m' | '6m' | '1y';
+const RANGE_OPTIONS: { key: ChartRange; label: string; days: number }[] = [
+  { key: '7d',  label: '7日',   days: 7   },
+  { key: '1m',  label: '1ヶ月', days: 30  },
+  { key: '3m',  label: '3ヶ月', days: 90  },
+  { key: '6m',  label: '6ヶ月', days: 180 },
+  { key: '1y',  label: '1年',   days: 365 },
+];
 
 function formatDate(date: Date): string {
   const y = date.getFullYear();
@@ -65,15 +76,19 @@ export default function DashboardScreen() {
   const [todayMeals, setTodayMeals] = useState<MealLog[]>([]);
   const [injectionLogs, setInjectionLogs] = useState<InjectionLog[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [chartRange, setChartRange] = useState<ChartRange>('7d');
 
-  // Add weight modal
+  // Weight modal
   const [weightModalVisible, setWeightModalVisible] = useState(false);
   const [weightInput, setWeightInput] = useState('');
+  const [weightDateInput, setWeightDateInput] = useState(today);
+  const [editingWeight, setEditingWeight] = useState<WeightLog | null>(null);
 
   const loadData = useCallback(async () => {
     try {
+      const days = RANGE_OPTIONS.find(r => r.key === chartRange)?.days ?? 7;
       const [weights, meals, injections] = await Promise.all([
-        getWeightLogs(7),
+        getWeightLogsByDays(days),
         getMealLogs(today),
         getInjectionLogs(1),
       ]);
@@ -83,7 +98,7 @@ export default function DashboardScreen() {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     }
-  }, [today]);
+  }, [today, chartRange]);
 
   useFocusEffect(
     useCallback(() => {
@@ -98,20 +113,49 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [refreshProfile, loadData]);
 
-  const handleAddWeight = async () => {
+  const openAddWeight = () => {
+    setEditingWeight(null);
+    setWeightInput('');
+    setWeightDateInput(today);
+    setWeightModalVisible(true);
+  };
+
+  const openEditWeight = (log: WeightLog) => {
+    setEditingWeight(log);
+    setWeightInput(String(log.weight_kg));
+    setWeightDateInput(log.date);
+    setWeightModalVisible(true);
+  };
+
+  const handleSaveWeight = async () => {
     const val = parseFloat(weightInput);
     if (isNaN(val) || val < 20 || val > 300) {
       Alert.alert('入力エラー', '正しい体重を入力してください（20〜300kg）');
       return;
     }
     setWeightModalVisible(false);
-    setWeightInput('');
     try {
-      await addWeightLog({ date: today, weight_kg: val });
+      if (editingWeight) {
+        await updateWeightLog(editingWeight.id!, val, weightDateInput);
+      } else {
+        await addWeightLog({ date: weightDateInput, weight_kg: val });
+      }
+      setEditingWeight(null);
+      setWeightInput('');
       loadData();
     } catch (error) {
       Alert.alert('エラー', '体重の保存に失敗しました');
     }
+  };
+
+  const handleDeleteWeight = (log: WeightLog) => {
+    Alert.alert('削除確認', `${log.date} の体重記録を削除しますか？`, [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '削除', style: 'destructive',
+        onPress: async () => { await deleteWeightLog(log.id!); loadData(); },
+      },
+    ]);
   };
 
   // PFC calculations
@@ -235,29 +279,58 @@ export default function DashboardScreen() {
         {/* Weight Chart */}
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle}>体重推移（直近7日）</Text>
-            <TouchableOpacity
-              style={styles.addSmallButton}
-              onPress={() => setWeightModalVisible(true)}
-            >
+            <Text style={styles.cardTitle}>体重推移</Text>
+            <TouchableOpacity style={styles.addSmallButton} onPress={openAddWeight}>
               <Ionicons name="add" size={16} color={Colors.primary} />
               <Text style={styles.addSmallButtonText}>記録</Text>
             </TouchableOpacity>
           </View>
+          {/* Range selector */}
+          <View style={styles.rangeSelector}>
+            {RANGE_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                style={[styles.rangeButton, chartRange === opt.key && styles.rangeButtonActive]}
+                onPress={() => setChartRange(opt.key)}
+              >
+                <Text style={[styles.rangeButtonText, chartRange === opt.key && styles.rangeButtonTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <WeightChart logs={weightLogs} />
           {weightLogs.length > 0 && (
-            <Text style={styles.latestWeight}>
-              最新: {weightLogs[0]?.weight_kg} kg
-              {weightLogs.length >= 2 && (
-                <Text style={[
-                  styles.weightDiff,
-                  { color: (weightLogs[0]?.weight_kg - weightLogs[1]?.weight_kg) <= 0 ? Colors.secondary : Colors.danger }
-                ]}>
-                  {' '}({((weightLogs[0]?.weight_kg - weightLogs[1]?.weight_kg) >= 0 ? '+' : '')}
-                  {(weightLogs[0]?.weight_kg - weightLogs[1]?.weight_kg).toFixed(1)} kg)
-                </Text>
-              )}
-            </Text>
+            <>
+              <Text style={styles.latestWeight}>
+                最新: {[...weightLogs].sort((a,b) => b.date.localeCompare(a.date))[0]?.weight_kg} kg
+                {weightLogs.length >= 2 && (() => {
+                  const sorted = [...weightLogs].sort((a,b) => b.date.localeCompare(a.date));
+                  const diff = sorted[0].weight_kg - sorted[1].weight_kg;
+                  return (
+                    <Text style={[styles.weightDiff, { color: diff <= 0 ? Colors.secondary : Colors.danger }]}>
+                      {' '}({diff >= 0 ? '+' : ''}{diff.toFixed(1)} kg)
+                    </Text>
+                  );
+                })()}
+              </Text>
+              <View style={styles.weightLogDivider} />
+              {[...weightLogs]
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .slice(0, 10)
+                .map((log) => (
+                  <View key={log.id} style={styles.weightLogRow}>
+                    <Text style={styles.weightLogDate}>{log.date}</Text>
+                    <Text style={styles.weightLogValue}>{log.weight_kg} kg</Text>
+                    <TouchableOpacity onPress={() => openEditWeight(log)} style={styles.weightLogAction}>
+                      <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeleteWeight(log)} style={styles.weightLogAction}>
+                      <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+            </>
           )}
         </View>
 
@@ -325,7 +398,7 @@ export default function DashboardScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Add Weight Modal */}
+      {/* Weight Modal (add / edit) */}
       <Modal
         visible={weightModalVisible}
         transparent
@@ -338,8 +411,15 @@ export default function DashboardScreen() {
         >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>体重を記録</Text>
-            <Text style={styles.modalDate}>{today}</Text>
+            <Text style={styles.modalTitle}>{editingWeight ? '体重を修正' : '体重を記録'}</Text>
+            <TextInput
+              style={styles.dateInput}
+              value={weightDateInput}
+              onChangeText={setWeightDateInput}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={Colors.textMuted}
+              keyboardType="numbers-and-punctuation"
+            />
             <TextInput
               style={styles.weightInput}
               value={weightInput}
@@ -352,16 +432,13 @@ export default function DashboardScreen() {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
-                onPress={() => {
-                  setWeightModalVisible(false);
-                  setWeightInput('');
-                }}
+                onPress={() => { setWeightModalVisible(false); setEditingWeight(null); setWeightInput(''); }}
               >
                 <Text style={styles.modalCancelText}>キャンセル</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalSaveButton}
-                onPress={handleAddWeight}
+                onPress={handleSaveWeight}
               >
                 <Text style={styles.modalSaveText}>保存</Text>
               </TouchableOpacity>
@@ -527,6 +604,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
+  rangeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    marginTop: 4,
+    gap: 4,
+  },
+  rangeButton: {
+    flex: 1,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+  },
+  rangeButtonActive: {
+    backgroundColor: Colors.primary,
+  },
+  rangeButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  rangeButtonTextActive: {
+    color: Colors.textOnPrimary,
+  },
   latestWeight: {
     fontSize: 13,
     color: Colors.textSecondary,
@@ -535,6 +637,43 @@ const styles = StyleSheet.create({
   },
   weightDiff: {
     fontWeight: '600',
+  },
+  weightLogDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  weightLogRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  weightLogDate: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  weightLogValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginRight: 12,
+  },
+  weightLogAction: {
+    padding: 6,
+  },
+  dateInput: {
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingBottom: 6,
+    marginBottom: 16,
+    width: 160,
   },
   addSmallButton: {
     flexDirection: 'row',
@@ -601,11 +740,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.text,
     marginBottom: 4,
-  },
-  modalDate: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginBottom: 20,
   },
   weightInput: {
     fontSize: 40,

@@ -181,6 +181,27 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
   }
 }
 
+export async function getWeightLogsByDays(days: number): Promise<WeightLog[]> {
+  const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const startDate = start.toISOString().split('T')[0];
+  return db.getAllAsync<WeightLog>(
+    'SELECT * FROM weight_logs WHERE date >= ? ORDER BY date ASC',
+    [startDate]
+  );
+}
+
+export async function updateWeightLog(
+  id: number,
+  weight_kg: number,
+  date: string,
+  notes?: string
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE weight_logs SET weight_kg = ?, date = ?, notes = ? WHERE id = ?',
+    [weight_kg, date, notes ?? null, id]
+  );
+}
+
 export async function getWeightLogs(limit = 30): Promise<WeightLog[]> {
   return db.getAllAsync<WeightLog>(
     'SELECT * FROM weight_logs ORDER BY date DESC LIMIT ?',

@@ -6,12 +6,12 @@ import { WeightLog } from '../lib/database';
 
 interface WeightChartProps {
   logs: WeightLog[];
-  title?: string;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const MAX_LABELS = 8;
 
-export default function WeightChart({ logs, title = '体重推移' }: WeightChartProps) {
+export default function WeightChart({ logs }: WeightChartProps) {
   if (logs.length < 2) {
     return (
       <View style={styles.emptyContainer}>
@@ -22,12 +22,11 @@ export default function WeightChart({ logs, title = '体重推移' }: WeightChar
     );
   }
 
-  // Sort by date ascending and take last 7 entries
-  const sorted = [...logs]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-7);
+  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+  const step = Math.max(1, Math.ceil(sorted.length / MAX_LABELS));
 
-  const labels = sorted.map((log) => {
+  const labels = sorted.map((log, i) => {
+    if (i % step !== 0 && i !== sorted.length - 1) return '';
     const parts = log.date.split('-');
     return `${parts[1]}/${parts[2]}`;
   });
@@ -38,17 +37,10 @@ export default function WeightChart({ logs, title = '体重推移' }: WeightChar
 
   return (
     <View style={styles.container}>
-      {title && <Text style={styles.title}>{title}</Text>}
       <LineChart
         data={{
           labels,
-          datasets: [
-            {
-              data,
-              color: () => Colors.primary,
-              strokeWidth: 2,
-            },
-          ],
+          datasets: [{ data, color: () => Colors.primary, strokeWidth: 2 }],
         }}
         width={SCREEN_WIDTH - 64}
         height={180}
@@ -61,14 +53,8 @@ export default function WeightChart({ logs, title = '体重推移' }: WeightChar
           decimalPlaces: 1,
           color: (opacity = 1) => `rgba(41, 128, 185, ${opacity})`,
           labelColor: () => Colors.textSecondary,
-          style: {
-            borderRadius: 12,
-          },
-          propsForDots: {
-            r: '4',
-            strokeWidth: '2',
-            stroke: Colors.primaryDark,
-          },
+          style: { borderRadius: 12 },
+          propsForDots: { r: '4', strokeWidth: '2', stroke: Colors.primaryDark },
           propsForBackgroundLines: {
             strokeDasharray: '',
             stroke: Colors.borderLight,
@@ -90,13 +76,6 @@ export default function WeightChart({ logs, title = '体重推移' }: WeightChar
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 8,
-    alignSelf: 'flex-start',
   },
   chart: {
     borderRadius: 12,
