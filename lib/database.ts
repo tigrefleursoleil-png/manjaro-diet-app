@@ -65,69 +65,67 @@ export interface StepMessageSent {
 }
 
 export function initDatabase(): void {
-  db.execSync(`
-    CREATE TABLE IF NOT EXISTS user_profile (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL DEFAULT '',
-      gender TEXT NOT NULL DEFAULT 'M',
-      birth_year INTEGER NOT NULL DEFAULT 1980,
-      height_cm REAL NOT NULL DEFAULT 170,
-      weight_kg REAL NOT NULL DEFAULT 70,
-      activity_factor REAL NOT NULL DEFAULT 1.55,
-      goal TEXT NOT NULL DEFAULT '維持',
-      use_manjaro INTEGER NOT NULL DEFAULT 1,
-      start_date TEXT NOT NULL DEFAULT '',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  db.runSync(`CREATE TABLE IF NOT EXISTS user_profile (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL DEFAULT '',
+    gender TEXT NOT NULL DEFAULT 'M',
+    birth_year INTEGER NOT NULL DEFAULT 1980,
+    height_cm REAL NOT NULL DEFAULT 170,
+    weight_kg REAL NOT NULL DEFAULT 70,
+    activity_factor REAL NOT NULL DEFAULT 1.55,
+    goal TEXT NOT NULL DEFAULT '維持',
+    use_manjaro INTEGER NOT NULL DEFAULT 1,
+    start_date TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 
-    CREATE TABLE IF NOT EXISTS weight_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      weight_kg REAL NOT NULL,
-      notes TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  db.runSync(`CREATE TABLE IF NOT EXISTS weight_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    weight_kg REAL NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 
-    CREATE TABLE IF NOT EXISTS injection_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      dose_mg REAL NOT NULL,
-      injection_site TEXT NOT NULL,
-      notes TEXT,
-      side_effects TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  db.runSync(`CREATE TABLE IF NOT EXISTS injection_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    dose_mg REAL NOT NULL,
+    injection_site TEXT NOT NULL,
+    notes TEXT,
+    side_effects TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 
-    CREATE TABLE IF NOT EXISTS meal_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      meal_type TEXT NOT NULL,
-      name TEXT NOT NULL,
-      calories REAL NOT NULL DEFAULT 0,
-      protein_g REAL NOT NULL DEFAULT 0,
-      fat_g REAL NOT NULL DEFAULT 0,
-      carbs_g REAL NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  db.runSync(`CREATE TABLE IF NOT EXISTS meal_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    meal_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    calories REAL NOT NULL DEFAULT 0,
+    protein_g REAL NOT NULL DEFAULT 0,
+    fat_g REAL NOT NULL DEFAULT 0,
+    carbs_g REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 
-    CREATE TABLE IF NOT EXISTS exercise_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      exercise_type TEXT NOT NULL,
-      name TEXT NOT NULL,
-      sets INTEGER,
-      reps INTEGER,
-      duration_min REAL,
-      notes TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  db.runSync(`CREATE TABLE IF NOT EXISTS exercise_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    exercise_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sets INTEGER,
+    reps INTEGER,
+    duration_min REAL,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 
-    CREATE TABLE IF NOT EXISTS step_messages_sent (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      week_number INTEGER NOT NULL UNIQUE,
-      sent_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-  `);
+  db.runSync(`CREATE TABLE IF NOT EXISTS step_messages_sent (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    week_number INTEGER NOT NULL UNIQUE,
+    sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 }
 
 export function getUserProfile(): UserProfile | null {
