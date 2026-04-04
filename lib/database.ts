@@ -138,11 +138,11 @@ export function getUserProfile(): UserProfile | null {
   return result;
 }
 
-export function saveUserProfile(profile: UserProfile): void {
+export async function saveUserProfile(profile: UserProfile): Promise<void> {
   const existing = getUserProfile();
   const useManjaroInt = profile.use_manjaro ? 1 : 0;
   if (existing) {
-    db.runSync(
+    await db.runAsync(
       `UPDATE user_profile SET
         name = ?, gender = ?, birth_year = ?, height_cm = ?,
         weight_kg = ?, activity_factor = ?, goal = ?,
@@ -162,7 +162,7 @@ export function saveUserProfile(profile: UserProfile): void {
       ]
     );
   } else {
-    db.runSync(
+    await db.runAsync(
       `INSERT INTO user_profile
         (name, gender, birth_year, height_cm, weight_kg, activity_factor, goal, use_manjaro, start_date)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -188,15 +188,15 @@ export function getWeightLogs(limit = 30): WeightLog[] {
   );
 }
 
-export function addWeightLog(log: Omit<WeightLog, 'id' | 'created_at'>): void {
-  db.runSync(
+export async function addWeightLog(log: Omit<WeightLog, 'id' | 'created_at'>): Promise<void> {
+  await db.runAsync(
     'INSERT INTO weight_logs (date, weight_kg, notes) VALUES (?, ?, ?)',
     [log.date, log.weight_kg, log.notes ?? null]
   );
 }
 
-export function deleteWeightLog(id: number): void {
-  db.runSync('DELETE FROM weight_logs WHERE id = ?', [id]);
+export async function deleteWeightLog(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM weight_logs WHERE id = ?', [id]);
 }
 
 export function getInjectionLogs(limit = 50): InjectionLog[] {
@@ -206,10 +206,10 @@ export function getInjectionLogs(limit = 50): InjectionLog[] {
   );
 }
 
-export function addInjectionLog(
+export async function addInjectionLog(
   log: Omit<InjectionLog, 'id' | 'created_at'>
-): void {
-  db.runSync(
+): Promise<void> {
+  await db.runAsync(
     `INSERT INTO injection_logs
       (date, dose_mg, injection_site, notes, side_effects)
      VALUES (?, ?, ?, ?, ?)`,
@@ -223,8 +223,8 @@ export function addInjectionLog(
   );
 }
 
-export function deleteInjectionLog(id: number): void {
-  db.runSync('DELETE FROM injection_logs WHERE id = ?', [id]);
+export async function deleteInjectionLog(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM injection_logs WHERE id = ?', [id]);
 }
 
 export function getMealLogs(date: string): MealLog[] {
@@ -244,8 +244,8 @@ export function getMealLogsByDateRange(
   );
 }
 
-export function addMealLog(log: Omit<MealLog, 'id' | 'created_at'>): void {
-  db.runSync(
+export async function addMealLog(log: Omit<MealLog, 'id' | 'created_at'>): Promise<void> {
+  await db.runAsync(
     `INSERT INTO meal_logs
       (date, meal_type, name, calories, protein_g, fat_g, carbs_g)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -261,8 +261,8 @@ export function addMealLog(log: Omit<MealLog, 'id' | 'created_at'>): void {
   );
 }
 
-export function deleteMealLog(id: number): void {
-  db.runSync('DELETE FROM meal_logs WHERE id = ?', [id]);
+export async function deleteMealLog(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM meal_logs WHERE id = ?', [id]);
 }
 
 export function getExerciseLogs(date?: string): ExerciseLog[] {
@@ -277,10 +277,10 @@ export function getExerciseLogs(date?: string): ExerciseLog[] {
   );
 }
 
-export function addExerciseLog(
+export async function addExerciseLog(
   log: Omit<ExerciseLog, 'id' | 'created_at'>
-): void {
-  db.runSync(
+): Promise<void> {
+  await db.runAsync(
     `INSERT INTO exercise_logs
       (date, exercise_type, name, sets, reps, duration_min, notes)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -296,8 +296,8 @@ export function addExerciseLog(
   );
 }
 
-export function deleteExerciseLog(id: number): void {
-  db.runSync('DELETE FROM exercise_logs WHERE id = ?', [id]);
+export async function deleteExerciseLog(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM exercise_logs WHERE id = ?', [id]);
 }
 
 export function getStepMessagesSent(): StepMessageSent[] {
@@ -306,8 +306,8 @@ export function getStepMessagesSent(): StepMessageSent[] {
   );
 }
 
-export function markStepMessageSent(weekNumber: number): void {
-  db.runSync(
+export async function markStepMessageSent(weekNumber: number): Promise<void> {
+  await db.runAsync(
     `INSERT OR REPLACE INTO step_messages_sent (week_number, sent_at)
      VALUES (?, datetime('now'))`,
     [weekNumber]

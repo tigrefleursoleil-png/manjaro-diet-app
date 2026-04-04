@@ -90,16 +90,16 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [refreshProfile, loadData]);
 
-  const handleAddWeight = () => {
+  const handleAddWeight = async () => {
     const val = parseFloat(weightInput);
     if (isNaN(val) || val < 20 || val > 300) {
       Alert.alert('入力エラー', '正しい体重を入力してください（20〜300kg）');
       return;
     }
+    setWeightModalVisible(false);
+    setWeightInput('');
     try {
-      addWeightLog({ date: today, weight_kg: val });
-      setWeightModalVisible(false);
-      setWeightInput('');
+      await addWeightLog({ date: today, weight_kg: val });
       loadData();
     } catch (error) {
       Alert.alert('エラー', '体重の保存に失敗しました');
@@ -337,7 +337,6 @@ export default function DashboardScreen() {
               keyboardType="decimal-pad"
               placeholder="例: 68.5"
               placeholderTextColor={Colors.textMuted}
-              autoFocus
             />
             <Text style={styles.weightInputUnit}>kg</Text>
             <View style={styles.modalButtons}>

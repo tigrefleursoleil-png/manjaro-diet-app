@@ -25,9 +25,9 @@ export default function useProfile(): UseProfileReturn {
     }
   }, []);
 
-  const updateProfile = useCallback((newProfile: UserProfile) => {
+  const updateProfile = useCallback(async (newProfile: UserProfile) => {
     try {
-      saveUserProfile(newProfile);
+      await saveUserProfile(newProfile);
       setProfile(newProfile);
     } catch (error) {
       console.error('Failed to save profile:', error);
