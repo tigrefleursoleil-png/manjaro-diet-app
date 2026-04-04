@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   SafeAreaView,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -331,6 +333,10 @@ export default function DashboardScreen() {
         animationType="slide"
         onRequestClose={() => setWeightModalVisible(false)}
       >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>体重を記録</Text>
@@ -363,6 +369,7 @@ export default function DashboardScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
