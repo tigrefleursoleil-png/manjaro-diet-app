@@ -322,8 +322,9 @@ export default function DashboardScreen() {
                   <View key={log.id} style={styles.weightLogRow}>
                     <Text style={styles.weightLogDate}>{log.date}</Text>
                     <Text style={styles.weightLogValue}>{log.weight_kg} kg</Text>
-                    <TouchableOpacity onPress={() => openEditWeight(log)} style={styles.weightLogAction}>
-                      <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
+                    <TouchableOpacity onPress={() => openEditWeight(log)} style={styles.weightLogEditButton}>
+                      <Ionicons name="pencil" size={13} color="#fff" />
+                      <Text style={styles.weightLogEditText}>編集</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDeleteWeight(log)} style={styles.weightLogAction}>
                       <Ionicons name="trash-outline" size={16} color={Colors.danger} />
@@ -661,6 +662,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
     marginRight: 12,
+  },
+  weightLogEditButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginRight: 6,
+  },
+  weightLogEditText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '700',
+    marginLeft: 4,
   },
   weightLogAction: {
     padding: 6,
