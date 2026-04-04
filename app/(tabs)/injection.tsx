@@ -17,6 +17,7 @@ import Colors from '../../constants/colors';
 import {
   getInjectionLogs,
   addInjectionLog,
+  updateInjectionLog,
   deleteInjectionLog,
   InjectionLog,
 } from '../../lib/database';
@@ -43,6 +44,7 @@ export default function InjectionScreen() {
   const [logs, setLogs] = useState<InjectionLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingLog, setEditingLog] = useState<InjectionLog | null>(null);
 
   // Form state
   const [formDate, setFormDate] = useState(today);
@@ -77,20 +79,37 @@ export default function InjectionScreen() {
   };
 
   const handleOpenModal = () => {
+    setEditingLog(null);
     resetForm();
     setModalVisible(true);
   };
 
+  const handleOpenEdit = (log: InjectionLog) => {
+    setEditingLog(log);
+    setFormDate(log.date);
+    setFormDose(log.dose_mg);
+    setFormSite(log.injection_site);
+    setFormNotes(log.notes ?? '');
+    setFormSideEffects(log.side_effects ? log.side_effects.split(',') : []);
+    setModalVisible(true);
+  };
+
   const handleSave = async () => {
+    const payload = {
+      date: formDate,
+      dose_mg: formDose,
+      injection_site: formSite,
+      notes: formNotes || undefined,
+      side_effects: formSideEffects.length > 0 ? formSideEffects.join(',') : undefined,
+    };
     try {
-      await addInjectionLog({
-        date: formDate,
-        dose_mg: formDose,
-        injection_site: formSite,
-        notes: formNotes || undefined,
-        side_effects: formSideEffects.length > 0 ? formSideEffects.join(',') : undefined,
-      });
+      if (editingLog) {
+        await updateInjectionLog(editingLog.id!, payload);
+      } else {
+        await addInjectionLog(payload);
+      }
       setModalVisible(false);
+      setEditingLog(null);
       loadData();
     } catch (e) {
       Alert.alert('エラー', '保存に失敗しました');
@@ -206,12 +225,15 @@ export default function InjectionScreen() {
                   )}
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={() => handleDelete(log.id!)}
-                style={styles.deleteButton}
-              >
-                <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
-              </TouchableOpacity>
+              <View style={styles.logCardActions}>
+                <TouchableOpacity onPress={() => handleOpenEdit(log)} style={styles.editButton}>
+                  <Ionicons name="pencil" size={13} color="#fff" />
+                  <Text style={styles.editButtonText}>編集</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(log.id!)} style={styles.deleteButton}>
+                  <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -229,7 +251,7 @@ export default function InjectionScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>新規投与記録</Text>
+              <Text style={styles.modalTitle}>{editingLog ? '投与記録を修正' : '新規投与記録'}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={24} color={Colors.textSecondary} />
               </TouchableOpacity>
@@ -439,6 +461,16 @@ const styles = StyleSheet.create({
   },
   sideEffectText: { fontSize: 11, color: Colors.warning, fontWeight: '600' },
   logNotes: { fontSize: 12, color: Colors.textMuted, marginTop: 4, fontStyle: 'italic' },
+  logCardActions: { flexDirection: 'column', alignItems: 'flex-end', gap: 6 },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  editButtonText: { fontSize: 11, color: '#fff', fontWeight: '700', marginLeft: 3 },
   deleteButton: { padding: 6 },
   bottomSpacer: { height: 20 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

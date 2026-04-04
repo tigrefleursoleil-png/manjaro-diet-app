@@ -244,6 +244,16 @@ export async function addInjectionLog(
   );
 }
 
+export async function updateInjectionLog(
+  id: number,
+  log: Omit<InjectionLog, 'id' | 'created_at'>
+): Promise<void> {
+  await db.runAsync(
+    `UPDATE injection_logs SET date = ?, dose_mg = ?, injection_site = ?, notes = ?, side_effects = ? WHERE id = ?`,
+    [log.date, log.dose_mg, log.injection_site, log.notes ?? null, log.side_effects ?? null, id]
+  );
+}
+
 export async function deleteInjectionLog(id: number): Promise<void> {
   await db.runAsync('DELETE FROM injection_logs WHERE id = ?', [id]);
 }
