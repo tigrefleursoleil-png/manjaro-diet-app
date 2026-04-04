@@ -14,7 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
 import useProfile from '../../hooks/useProfile';
@@ -308,20 +308,18 @@ export default function DashboardScreen() {
             <Ionicons name="scale" size={24} color={Colors.primary} />
             <Text style={styles.quickActionText}>体重記録</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/nutrition')}
-          >
-            <Ionicons name="restaurant" size={24} color={Colors.secondary} />
-            <Text style={styles.quickActionText}>食事記録</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/injection')}
-          >
-            <Ionicons name="medical" size={24} color={Colors.accent} />
-            <Text style={styles.quickActionText}>投与記録</Text>
-          </TouchableOpacity>
+          <Link href="/nutrition" asChild>
+            <TouchableOpacity style={styles.quickActionButton}>
+              <Ionicons name="restaurant" size={24} color={Colors.secondary} />
+              <Text style={styles.quickActionText}>食事記録</Text>
+            </TouchableOpacity>
+          </Link>
+          <Link href="/injection" asChild>
+            <TouchableOpacity style={styles.quickActionButton}>
+              <Ionicons name="medical" size={24} color={Colors.accent} />
+              <Text style={styles.quickActionText}>投与記録</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         <View style={styles.bottomSpacer} />

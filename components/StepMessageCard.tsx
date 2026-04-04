@@ -4,17 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  LayoutAnimation,
-  Platform,
-  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import { StepMessage } from '../constants/stepMessages';
-
-if (Platform.OS === 'android') {
-  UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
 
 interface StepMessageCardProps {
   message: StepMessage;
@@ -28,7 +21,6 @@ export default function StepMessageCard({
   const [expanded, setExpanded] = useState(false);
 
   const handleToggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded((prev) => !prev);
   };
 
