@@ -310,14 +310,14 @@ export default function DashboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => router.navigate('/(tabs)/nutrition')}
+            onPress={() => router.push('/nutrition')}
           >
             <Ionicons name="restaurant" size={24} color={Colors.secondary} />
             <Text style={styles.quickActionText}>食事記録</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => router.navigate('/(tabs)/injection')}
+            onPress={() => router.push('/injection')}
           >
             <Ionicons name="medical" size={24} color={Colors.accent} />
             <Text style={styles.quickActionText}>投与記録</Text>
