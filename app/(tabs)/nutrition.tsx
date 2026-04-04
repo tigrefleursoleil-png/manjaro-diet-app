@@ -61,10 +61,10 @@ export default function NutritionScreen() {
 
   const pfcTarget = profile ? calculatePFC(profile) : null;
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      setMeals(getMealLogs(today));
+      setMeals(await getMealLogs(today));
     } catch (e) {
       console.error(e);
     } finally {
@@ -87,13 +87,13 @@ export default function NutritionScreen() {
     setFormCarbs('');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formName.trim()) {
       Alert.alert('入力エラー', '食品名を入力してください');
       return;
     }
     try {
-      addMealLog({
+      await addMealLog({
         date: today,
         meal_type: formMealType,
         name: formName.trim(),
@@ -116,8 +116,8 @@ export default function NutritionScreen() {
       {
         text: '削除',
         style: 'destructive',
-        onPress: () => {
-          deleteMealLog(id);
+        onPress: async () => {
+          await deleteMealLog(id);
           loadData();
         },
       },

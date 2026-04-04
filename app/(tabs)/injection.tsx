@@ -51,10 +51,10 @@ export default function InjectionScreen() {
   const [formNotes, setFormNotes] = useState('');
   const [formSideEffects, setFormSideEffects] = useState<string[]>([]);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      setLogs(getInjectionLogs(50));
+      setLogs(await getInjectionLogs(50));
     } catch (e) {
       console.error(e);
     } finally {
@@ -81,9 +81,9 @@ export default function InjectionScreen() {
     setModalVisible(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      addInjectionLog({
+      await addInjectionLog({
         date: formDate,
         dose_mg: formDose,
         injection_site: formSite,
@@ -103,8 +103,8 @@ export default function InjectionScreen() {
       {
         text: '削除',
         style: 'destructive',
-        onPress: () => {
-          deleteInjectionLog(id);
+        onPress: async () => {
+          await deleteInjectionLog(id);
           loadData();
         },
       },

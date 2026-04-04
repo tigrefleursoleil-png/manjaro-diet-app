@@ -67,11 +67,16 @@ export default function DashboardScreen() {
   const [weightModalVisible, setWeightModalVisible] = useState(false);
   const [weightInput, setWeightInput] = useState('');
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     try {
-      setWeightLogs(getWeightLogs(7));
-      setTodayMeals(getMealLogs(today));
-      setInjectionLogs(getInjectionLogs(1));
+      const [weights, meals, injections] = await Promise.all([
+        getWeightLogs(7),
+        getMealLogs(today),
+        getInjectionLogs(1),
+      ]);
+      setWeightLogs(weights);
+      setTodayMeals(meals);
+      setInjectionLogs(injections);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     }

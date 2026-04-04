@@ -128,18 +128,18 @@ export function initDatabase(): void {
   )`);
 }
 
-export function getUserProfile(): UserProfile | null {
-  const result = db.getFirstSync<UserProfile>(
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const result = await db.getFirstAsync<UserProfile>(
     'SELECT * FROM user_profile ORDER BY id DESC LIMIT 1'
   );
   if (result) {
     result.use_manjaro = (result.use_manjaro as unknown as number) === 1;
   }
-  return result;
+  return result ?? null;
 }
 
 export async function saveUserProfile(profile: UserProfile): Promise<void> {
-  const existing = getUserProfile();
+  const existing = await getUserProfile();
   const useManjaroInt = profile.use_manjaro ? 1 : 0;
   if (existing) {
     await db.runAsync(
@@ -181,8 +181,8 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
   }
 }
 
-export function getWeightLogs(limit = 30): WeightLog[] {
-  return db.getAllSync<WeightLog>(
+export async function getWeightLogs(limit = 30): Promise<WeightLog[]> {
+  return db.getAllAsync<WeightLog>(
     'SELECT * FROM weight_logs ORDER BY date DESC LIMIT ?',
     [limit]
   );
@@ -199,8 +199,8 @@ export async function deleteWeightLog(id: number): Promise<void> {
   await db.runAsync('DELETE FROM weight_logs WHERE id = ?', [id]);
 }
 
-export function getInjectionLogs(limit = 50): InjectionLog[] {
-  return db.getAllSync<InjectionLog>(
+export async function getInjectionLogs(limit = 50): Promise<InjectionLog[]> {
+  return db.getAllAsync<InjectionLog>(
     'SELECT * FROM injection_logs ORDER BY date DESC LIMIT ?',
     [limit]
   );
@@ -227,18 +227,18 @@ export async function deleteInjectionLog(id: number): Promise<void> {
   await db.runAsync('DELETE FROM injection_logs WHERE id = ?', [id]);
 }
 
-export function getMealLogs(date: string): MealLog[] {
-  return db.getAllSync<MealLog>(
+export async function getMealLogs(date: string): Promise<MealLog[]> {
+  return db.getAllAsync<MealLog>(
     'SELECT * FROM meal_logs WHERE date = ? ORDER BY created_at ASC',
     [date]
   );
 }
 
-export function getMealLogsByDateRange(
+export async function getMealLogsByDateRange(
   startDate: string,
   endDate: string
-): MealLog[] {
-  return db.getAllSync<MealLog>(
+): Promise<MealLog[]> {
+  return db.getAllAsync<MealLog>(
     'SELECT * FROM meal_logs WHERE date BETWEEN ? AND ? ORDER BY date ASC, created_at ASC',
     [startDate, endDate]
   );
@@ -265,14 +265,14 @@ export async function deleteMealLog(id: number): Promise<void> {
   await db.runAsync('DELETE FROM meal_logs WHERE id = ?', [id]);
 }
 
-export function getExerciseLogs(date?: string): ExerciseLog[] {
+export async function getExerciseLogs(date?: string): Promise<ExerciseLog[]> {
   if (date) {
-    return db.getAllSync<ExerciseLog>(
+    return db.getAllAsync<ExerciseLog>(
       'SELECT * FROM exercise_logs WHERE date = ? ORDER BY created_at ASC',
       [date]
     );
   }
-  return db.getAllSync<ExerciseLog>(
+  return db.getAllAsync<ExerciseLog>(
     'SELECT * FROM exercise_logs ORDER BY date DESC, created_at DESC LIMIT 50'
   );
 }
@@ -300,8 +300,8 @@ export async function deleteExerciseLog(id: number): Promise<void> {
   await db.runAsync('DELETE FROM exercise_logs WHERE id = ?', [id]);
 }
 
-export function getStepMessagesSent(): StepMessageSent[] {
-  return db.getAllSync<StepMessageSent>(
+export async function getStepMessagesSent(): Promise<StepMessageSent[]> {
+  return db.getAllAsync<StepMessageSent>(
     'SELECT * FROM step_messages_sent ORDER BY week_number ASC'
   );
 }

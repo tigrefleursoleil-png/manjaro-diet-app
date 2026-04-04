@@ -61,11 +61,15 @@ export default function ExerciseScreen() {
   const [formDuration, setFormDuration] = useState('');
   const [formNotes, setFormNotes] = useState('');
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      setTodayLogs(getExerciseLogs(today));
-      setAllLogs(getExerciseLogs());
+      const [todayExercises, allExercises] = await Promise.all([
+        getExerciseLogs(today),
+        getExerciseLogs(),
+      ]);
+      setTodayLogs(todayExercises);
+      setAllLogs(allExercises);
     } catch (e) {
       console.error(e);
     } finally {
@@ -88,13 +92,13 @@ export default function ExerciseScreen() {
     setFormNotes('');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formName.trim()) {
       Alert.alert('入力エラー', '種目名を入力してください');
       return;
     }
     try {
-      addExerciseLog({
+      await addExerciseLog({
         date: today,
         exercise_type: formType,
         name: formName.trim(),
@@ -111,9 +115,9 @@ export default function ExerciseScreen() {
     }
   };
 
-  const handleQuickAdd = (exercise: typeof QUICK_EXERCISES[0]) => {
+  const handleQuickAdd = async (exercise: typeof QUICK_EXERCISES[0]) => {
     try {
-      addExerciseLog({
+      await addExerciseLog({
         date: today,
         exercise_type: exercise.type,
         name: exercise.name,
@@ -133,8 +137,8 @@ export default function ExerciseScreen() {
       {
         text: '削除',
         style: 'destructive',
-        onPress: () => {
-          deleteExerciseLog(id);
+        onPress: async () => {
+          await deleteExerciseLog(id);
           loadData();
         },
       },

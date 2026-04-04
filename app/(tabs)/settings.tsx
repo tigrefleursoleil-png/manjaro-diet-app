@@ -83,11 +83,11 @@ export default function SettingsScreen() {
     };
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newProfile = buildProfile();
     if (!newProfile) return;
     try {
-      updateProfile(newProfile);
+      await updateProfile(newProfile);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
