@@ -36,7 +36,13 @@
           "color": "#2980B9"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "食品のバーコードをスキャンするためにカメラを使用します。"
+        }
+      ]
     ]
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,12 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import Colors from '../../constants/colors';
 import PFCProgressBar from '../../components/PFCProgressBar';
 import useProfile from '../../hooks/useProfile';
@@ -23,6 +26,11 @@ import {
   deleteMealLog,
   MealLog,
 } from '../../lib/database';
+import {
+  searchFoodByBarcode,
+  searchFoodByName,
+  FoodItem,
+} from '../../lib/foodSearch';
 
 function formatDate(date: Date): string {
   const y = date.getFullYear();
@@ -50,6 +58,9 @@ export default function NutritionScreen() {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [barcodeScanned, setBarcodeScanned] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
 
   // Form
   const [formMealType, setFormMealType] = useState<MealType>('朝食');
@@ -58,6 +69,14 @@ export default function NutritionScreen() {
   const [formProtein, setFormProtein] = useState('');
   const [formFat, setFormFat] = useState('');
   const [formCarbs, setFormCarbs] = useState('');
+
+  // Food search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<FoodItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [baseFood, setBaseFood] = useState<FoodItem | null>(null);
+  const [formAmount, setFormAmount] = useState('100');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pfcTarget = profile ? calculatePFC(profile) : null;
 
@@ -78,6 +97,75 @@ export default function NutritionScreen() {
     }, [loadData])
   );
 
+  // Debounced food search
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    searchTimerRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      const results = await searchFoodByName(searchQuery);
+      setSearchResults(results);
+      setSearchLoading(false);
+    }, 600);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery]);
+
+  const applyFood = (food: FoodItem, amount: number) => {
+    const scale = amount / 100;
+    setFormName(food.name);
+    setFormCalories(String(Math.round(food.calories_per100g * scale)));
+    setFormProtein(String(Math.round(food.protein_per100g * scale * 10) / 10));
+    setFormFat(String(Math.round(food.fat_per100g * scale * 10) / 10));
+    setFormCarbs(String(Math.round(food.carbs_per100g * scale * 10) / 10));
+    setBaseFood(food);
+    setSearchResults([]);
+    setSearchQuery('');
+  };
+
+  const handleAmountChange = (val: string) => {
+    setFormAmount(val);
+    if (baseFood) {
+      const amount = parseFloat(val) || 0;
+      const scale = amount / 100;
+      setFormCalories(String(Math.round(baseFood.calories_per100g * scale)));
+      setFormProtein(String(Math.round(baseFood.protein_per100g * scale * 10) / 10));
+      setFormFat(String(Math.round(baseFood.fat_per100g * scale * 10) / 10));
+      setFormCarbs(String(Math.round(baseFood.carbs_per100g * scale * 10) / 10));
+    }
+  };
+
+  const handleOpenScanner = async () => {
+    if (!permission?.granted) {
+      const result = await requestPermission();
+      if (!result.granted) {
+        Alert.alert('カメラの許可が必要です', '設定からカメラへのアクセスを許可してください。');
+        return;
+      }
+    }
+    setBarcodeScanned(false);
+    setShowScanner(true);
+  };
+
+  const handleBarcodeScan = async ({ data }: { data: string }) => {
+    if (barcodeScanned) return;
+    setBarcodeScanned(true);
+    setShowScanner(false);
+    const food = await searchFoodByBarcode(data);
+    if (food) {
+      applyFood(food, parseFloat(formAmount) || 100);
+    } else {
+      Alert.alert(
+        '見つかりませんでした',
+        'このバーコードの食品データは登録されていません。手動で入力してください。'
+      );
+    }
+  };
+
   const resetForm = () => {
     setFormMealType('朝食');
     setFormName('');
@@ -85,6 +173,10 @@ export default function NutritionScreen() {
     setFormProtein('');
     setFormFat('');
     setFormCarbs('');
+    setSearchQuery('');
+    setSearchResults([]);
+    setFormAmount('100');
+    setBaseFood(null);
   };
 
   const handleSave = async () => {
@@ -349,13 +441,43 @@ export default function NutritionScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
+      {/* Barcode Scanner Modal */}
+      <Modal
+        visible={showScanner}
+        animationType="slide"
+        onRequestClose={() => setShowScanner(false)}
+      >
+        <View style={styles.scannerContainer}>
+          <CameraView
+            style={styles.camera}
+            facing="back"
+            barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr'] }}
+            onBarcodeScanned={barcodeScanned ? undefined : handleBarcodeScan}
+          />
+          <View style={styles.scannerOverlay}>
+            <View style={styles.scannerFrame} />
+            <Text style={styles.scannerHint}>バーコードをフレームに合わせてください</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.scanCancelButton}
+            onPress={() => setShowScanner(false)}
+          >
+            <Text style={styles.scanCancelText}>キャンセル</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Add Meal Modal */}
       <Modal
         visible={modalVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>食事を記録</Text>
@@ -364,7 +486,51 @@ export default function NutritionScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* Search Row */}
+              <View style={styles.searchRow}>
+                <TextInput
+                  style={[styles.textInput, styles.searchInput]}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="食品名で検索..."
+                  placeholderTextColor={Colors.textMuted}
+                  returnKeyType="search"
+                />
+                <TouchableOpacity style={styles.scanButton} onPress={handleOpenScanner}>
+                  <Ionicons name="barcode-outline" size={22} color={Colors.textOnPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Search Loading */}
+              {searchLoading && (
+                <ActivityIndicator style={{ marginVertical: 8 }} color={Colors.primary} />
+              )}
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <View style={styles.searchResults}>
+                  {searchResults.map((item, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={[
+                        styles.searchResultItem,
+                        i < searchResults.length - 1 && styles.searchResultBorder,
+                      ]}
+                      onPress={() => applyFood(item, parseFloat(formAmount) || 100)}
+                    >
+                      <Text style={styles.searchResultName} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.searchResultDetails}>
+                        {Math.round(item.calories_per100g)}kcal · P{Math.round(item.protein_per100g)}g · F{Math.round(item.fat_per100g)}g · C{Math.round(item.carbs_per100g)}g / 100g
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Meal Type */}
               <Text style={styles.fieldLabel}>食事の種類</Text>
               <View style={styles.optionRow}>
                 {MEAL_TYPES.map((type) => (
@@ -391,15 +557,32 @@ export default function NutritionScreen() {
                 ))}
               </View>
 
+              {/* Amount (shown when food is selected from search/barcode) */}
+              {baseFood && (
+                <>
+                  <Text style={styles.fieldLabel}>量 (g)</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={formAmount}
+                    onChangeText={handleAmountChange}
+                    keyboardType="decimal-pad"
+                    placeholder="100"
+                    placeholderTextColor={Colors.textMuted}
+                  />
+                </>
+              )}
+
+              {/* Food Name */}
               <Text style={styles.fieldLabel}>食品名</Text>
               <TextInput
                 style={styles.textInput}
                 value={formName}
-                onChangeText={setFormName}
+                onChangeText={(v) => { setFormName(v); setBaseFood(null); }}
                 placeholder="例: ゆで卵、鶏胸肉など"
                 placeholderTextColor={Colors.textMuted}
               />
 
+              {/* Calories */}
               <Text style={styles.fieldLabel}>カロリー (kcal)</Text>
               <TextInput
                 style={styles.textInput}
@@ -410,6 +593,7 @@ export default function NutritionScreen() {
                 placeholderTextColor={Colors.textMuted}
               />
 
+              {/* PFC */}
               <Text style={styles.fieldLabel}>PFC (g)</Text>
               <View style={styles.pfcInputRow}>
                 <View style={styles.pfcInputItem}>
@@ -453,7 +637,7 @@ export default function NutritionScreen() {
               <View style={{ height: 20 }} />
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -567,21 +751,81 @@ const styles = StyleSheet.create({
   remainingItem: { alignItems: 'center' },
   remainingValue: { fontSize: 18, fontWeight: '700' },
   remainingLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  // Scanner
+  scannerContainer: { flex: 1, backgroundColor: 'black' },
+  camera: { flex: 1 },
+  scannerOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scannerFrame: {
+    width: 260,
+    height: 160,
+    borderWidth: 2,
+    borderColor: 'white',
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+  },
+  scannerHint: {
+    color: 'white',
+    marginTop: 16,
+    fontSize: 14,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  scanCancelButton: {
+    position: 'absolute',
+    bottom: 48,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 30,
+  },
+  scanCancelText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    maxHeight: '90%',
+    maxHeight: '92%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
+  // Search
+  searchRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+  searchInput: { flex: 1 },
+  scanButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchResults: {
+    backgroundColor: Colors.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 8,
+    maxHeight: 220,
+    overflow: 'hidden',
+  },
+  searchResultItem: { paddingHorizontal: 12, paddingVertical: 10 },
+  searchResultBorder: { borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
+  searchResultName: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  searchResultDetails: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  // Form
   fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 8, marginTop: 12 },
   textInput: {
     backgroundColor: Colors.background,
