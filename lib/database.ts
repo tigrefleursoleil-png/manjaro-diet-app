@@ -64,6 +64,24 @@ export interface StepMessageSent {
   sent_at: string;
 }
 
+export interface FavoriteFood {
+  id?: number;
+  name: string;
+  calories: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+  created_at?: string;
+}
+
+export interface MealDayTotal {
+  date: string;
+  calories: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+}
+
 export function initDatabase(): void {
   db.runSync(`CREATE TABLE IF NOT EXISTS user_profile (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,6 +143,16 @@ export function initDatabase(): void {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     week_number INTEGER NOT NULL UNIQUE,
     sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+
+  db.runSync(`CREATE TABLE IF NOT EXISTS favorite_foods (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    calories REAL NOT NULL DEFAULT 0,
+    protein_g REAL NOT NULL DEFAULT 0,
+    fat_g REAL NOT NULL DEFAULT 0,
+    carbs_g REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`);
 }
 
@@ -294,6 +322,54 @@ export async function addMealLog(log: Omit<MealLog, 'id' | 'created_at'>): Promi
 
 export async function deleteMealLog(id: number): Promise<void> {
   await db.runAsync('DELETE FROM meal_logs WHERE id = ?', [id]);
+}
+
+export async function updateMealLog(
+  id: number,
+  log: Omit<MealLog, 'id' | 'created_at'>
+): Promise<void> {
+  await db.runAsync(
+    `UPDATE meal_logs SET date = ?, meal_type = ?, name = ?, calories = ?, protein_g = ?, fat_g = ?, carbs_g = ? WHERE id = ?`,
+    [log.date, log.meal_type, log.name, log.calories, log.protein_g, log.fat_g, log.carbs_g, id]
+  );
+}
+
+export async function getMealTotalsByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<MealDayTotal[]> {
+  return db.getAllAsync<MealDayTotal>(
+    `SELECT date,
+       SUM(calories) AS calories,
+       SUM(protein_g) AS protein_g,
+       SUM(fat_g) AS fat_g,
+       SUM(carbs_g) AS carbs_g
+     FROM meal_logs
+     WHERE date BETWEEN ? AND ?
+     GROUP BY date
+     ORDER BY date ASC`,
+    [startDate, endDate]
+  );
+}
+
+export async function getFavoriteFoods(): Promise<FavoriteFood[]> {
+  return db.getAllAsync<FavoriteFood>(
+    'SELECT * FROM favorite_foods ORDER BY created_at DESC'
+  );
+}
+
+export async function addFavoriteFood(
+  food: Omit<FavoriteFood, 'id' | 'created_at'>
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO favorite_foods (name, calories, protein_g, fat_g, carbs_g)
+     VALUES (?, ?, ?, ?, ?)`,
+    [food.name, food.calories, food.protein_g, food.fat_g, food.carbs_g]
+  );
+}
+
+export async function deleteFavoriteFood(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM favorite_foods WHERE id = ?', [id]);
 }
 
 export async function getExerciseLogs(date?: string): Promise<ExerciseLog[]> {

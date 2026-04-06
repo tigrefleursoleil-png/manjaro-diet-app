@@ -12,25 +12,63 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { BarChart } from 'react-native-chart-kit';
 import Colors from '../../constants/colors';
 import PFCProgressBar from '../../components/PFCProgressBar';
+import NutritionChart from '../../components/NutritionChart';
 import useProfile from '../../hooks/useProfile';
 import { calculatePFC } from '../../lib/pfc';
 import {
   getMealLogs,
   addMealLog,
   deleteMealLog,
+  updateMealLog,
+  getMealTotalsByDateRange,
+  getFavoriteFoods,
+  addFavoriteFood,
+  deleteFavoriteFood,
   MealLog,
+  FavoriteFood,
+  MealDayTotal,
 } from '../../lib/database';
 import {
   searchFoodByBarcode,
   searchFoodByName,
   FoodItem,
 } from '../../lib/foodSearch';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getWeekRange(dateStr: string): { start: string; end: string } {
+  const d = new Date(dateStr);
+  const dow = d.getDay();
+  const diffToMon = dow === 0 ? -6 : 1 - dow;
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + diffToMon);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = (dt: Date) => {
+    const y = dt.getFullYear();
+    const mo = String(dt.getMonth() + 1).padStart(2, '0');
+    const da = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${da}`;
+  };
+  return { start: fmt(mon), end: fmt(sun) };
+}
 
 function formatDate(date: Date): string {
   const y = date.getFullYear();
@@ -39,7 +77,7 @@ function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-type TabType = 'target' | 'log' | 'progress';
+type TabType = 'target' | 'log' | 'weekly' | 'progress';
 type MealType = '朝食' | '昼食' | '夕食' | '間食';
 
 const MEAL_TYPES: MealType[] = ['朝食', '昼食', '夕食', '間食'];
@@ -52,8 +90,9 @@ const MEAL_TYPE_COLORS: Record<MealType, string> = {
 };
 
 export default function NutritionScreen() {
-  const today = formatDate(new Date());
+  const todayStr = formatDate(new Date());
   const { profile } = useProfile();
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [activeTab, setActiveTab] = useState<TabType>('log');
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +100,10 @@ export default function NutritionScreen() {
   const [showScanner, setShowScanner] = useState(false);
   const [barcodeScanned, setBarcodeScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
+  const [favoriteFoods, setFavoriteFoods] = useState<FavoriteFood[]>([]);
+  const [weeklyData, setWeeklyData] = useState<MealDayTotal[]>([]);
+  const [trendData, setTrendData] = useState<MealDayTotal[]>([]);
 
   // Form
   const [formMealType, setFormMealType] = useState<MealType>('朝食');
@@ -83,13 +126,22 @@ export default function NutritionScreen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      setMeals(await getMealLogs(today));
+      const [mealList, favorites, trend] = await Promise.all([
+        getMealLogs(selectedDate),
+        getFavoriteFoods(),
+        getMealTotalsByDateRange(addDays(todayStr, -6), todayStr),
+      ]);
+      setMeals(mealList);
+      setFavoriteFoods(favorites);
+      setTrendData(trend);
+      const { start, end } = getWeekRange(selectedDate);
+      setWeeklyData(await getMealTotalsByDateRange(start, end));
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [today]);
+  }, [selectedDate, todayStr]);
 
   useFocusEffect(
     useCallback(() => {
@@ -167,6 +219,7 @@ export default function NutritionScreen() {
   };
 
   const resetForm = () => {
+    setEditingMeal(null);
     setFormMealType('朝食');
     setFormName('');
     setFormCalories('');
@@ -179,27 +232,87 @@ export default function NutritionScreen() {
     setBaseFood(null);
   };
 
+  const openEditModal = (meal: MealLog) => {
+    setEditingMeal(meal);
+    setFormMealType(meal.meal_type);
+    setFormName(meal.name);
+    setFormCalories(String(meal.calories));
+    setFormProtein(String(meal.protein_g));
+    setFormFat(String(meal.fat_g));
+    setFormCarbs(String(meal.carbs_g));
+    setSearchQuery('');
+    setSearchResults([]);
+    setFormAmount('100');
+    setBaseFood(null);
+    setModalVisible(true);
+  };
+
   const handleSave = async () => {
     if (!formName.trim()) {
       Alert.alert('入力エラー', '食品名を入力してください');
       return;
     }
+    const logData = {
+      date: selectedDate,
+      meal_type: formMealType,
+      name: formName.trim(),
+      calories: parseFloat(formCalories) || 0,
+      protein_g: parseFloat(formProtein) || 0,
+      fat_g: parseFloat(formFat) || 0,
+      carbs_g: parseFloat(formCarbs) || 0,
+    };
     try {
-      await addMealLog({
-        date: today,
-        meal_type: formMealType,
-        name: formName.trim(),
-        calories: parseFloat(formCalories) || 0,
-        protein_g: parseFloat(formProtein) || 0,
-        fat_g: parseFloat(formFat) || 0,
-        carbs_g: parseFloat(formCarbs) || 0,
-      });
+      if (editingMeal) {
+        await updateMealLog(editingMeal.id!, logData);
+      } else {
+        await addMealLog(logData);
+      }
       setModalVisible(false);
       resetForm();
       loadData();
     } catch (e) {
       Alert.alert('エラー', '保存に失敗しました');
     }
+  };
+
+  const handleAddFavorite = async () => {
+    if (!formName.trim()) return;
+    try {
+      await addFavoriteFood({
+        name: formName.trim(),
+        calories: parseFloat(formCalories) || 0,
+        protein_g: parseFloat(formProtein) || 0,
+        fat_g: parseFloat(formFat) || 0,
+        carbs_g: parseFloat(formCarbs) || 0,
+      });
+      setFavoriteFoods(await getFavoriteFoods());
+      Alert.alert('追加しました', `「${formName.trim()}」をお気に入りに追加しました`);
+    } catch (e) {
+      Alert.alert('エラー', '追加に失敗しました');
+    }
+  };
+
+  const handleDeleteFavorite = (id: number, name: string) => {
+    Alert.alert('削除確認', `「${name}」をお気に入りから削除しますか？`, [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '削除',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteFavoriteFood(id);
+          setFavoriteFoods(await getFavoriteFoods());
+        },
+      },
+    ]);
+  };
+
+  const applyFavorite = (fav: FavoriteFood) => {
+    setFormName(fav.name);
+    setFormCalories(String(fav.calories));
+    setFormProtein(String(fav.protein_g));
+    setFormFat(String(fav.fat_g));
+    setFormCarbs(String(fav.carbs_g));
+    setBaseFood(null);
   };
 
   const handleDelete = (id: number) => {
@@ -220,6 +333,28 @@ export default function NutritionScreen() {
   const totalProtein = meals.reduce((s, m) => s + m.protein_g, 0);
   const totalFat = meals.reduce((s, m) => s + m.fat_g, 0);
   const totalCarbs = meals.reduce((s, m) => s + m.carbs_g, 0);
+
+  const isToday = selectedDate === todayStr;
+  const displayDate = isToday ? `${selectedDate} (今日)` : selectedDate;
+
+  // Weekly chart helpers
+  const { start: weekStart, end: weekEnd } = getWeekRange(selectedDate);
+  const weekDays: string[] = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekCalories = weekDays.map((d) => {
+    const found = weeklyData.find((w) => w.date === d);
+    return found ? Math.round(found.calories) : 0;
+  });
+  const weekLabels = weekDays.map((d) => {
+    const parts = d.split('-');
+    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+  });
+  const weekTotal = weekCalories.reduce((s, v) => s + v, 0);
+  const weekDaysWithData = weekCalories.filter((v) => v > 0).length;
+  const weekAvg = weekDaysWithData > 0 ? Math.round(weekTotal / weekDaysWithData) : 0;
+  const weeklyPFC = weeklyData.reduce(
+    (acc, d) => ({ protein: acc.protein + d.protein_g, fat: acc.fat + d.fat_g, carbs: acc.carbs + d.carbs_g }),
+    { protein: 0, fat: 0, carbs: 0 }
+  );
 
   if (loading) {
     return (
@@ -245,10 +380,26 @@ export default function NutritionScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Date Nav */}
+      <View style={styles.dateNav}>
+        <TouchableOpacity style={styles.dateNavArrow} onPress={() => setSelectedDate(addDays(selectedDate, -1))}>
+          <Ionicons name="chevron-back" size={20} color={Colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.dateNavText}>{displayDate}</Text>
+        <TouchableOpacity
+          style={[styles.dateNavArrow, isToday && styles.dateNavArrowDisabled]}
+          onPress={() => !isToday && setSelectedDate(addDays(selectedDate, 1))}
+          disabled={isToday}
+        >
+          <Ionicons name="chevron-forward" size={20} color={isToday ? Colors.textMuted : Colors.text} />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.tabBar}>
         {([
           { key: 'target', label: 'PFC目標' },
           { key: 'log', label: '食事記録' },
+          { key: 'weekly', label: '週次' },
           { key: 'progress', label: '達成率' },
         ] as { key: TabType; label: string }[]).map((tab) => (
           <TouchableOpacity
@@ -262,6 +413,7 @@ export default function NutritionScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
 
       <ScrollView
         style={styles.container}
@@ -338,7 +490,7 @@ export default function NutritionScreen() {
         {activeTab === 'log' && (
           <View>
             <View style={styles.summaryCard}>
-              <Text style={styles.cardTitle}>今日の合計 ({today})</Text>
+              <Text style={styles.cardTitle}>{selectedDate} の合計</Text>
               <View style={styles.metricRow}>
                 <View style={styles.metricItem}>
                   <Text style={[styles.metricValue, { color: Colors.accent }]}>{Math.round(totalCalories)}</Text>
@@ -389,6 +541,9 @@ export default function NutritionScreen() {
                             {meal.carbs_g > 0 && ` · C${Math.round(meal.carbs_g)}g`}
                           </Text>
                         </View>
+                        <TouchableOpacity onPress={() => openEditModal(meal)} style={styles.editButton}>
+                          <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={() => handleDelete(meal.id!)} style={styles.deleteButton}>
                           <Ionicons name="trash-outline" size={16} color={Colors.textMuted} />
                         </TouchableOpacity>
@@ -401,11 +556,86 @@ export default function NutritionScreen() {
           </View>
         )}
 
+        {activeTab === 'weekly' && (
+          <View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.cardTitle}>週次サマリー ({weekStart} 〜 {weekEnd})</Text>
+              {weekDaysWithData === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>この週のデータがありません</Text>
+                </View>
+              ) : (
+                <>
+                  <BarChart
+                    data={{ labels: weekLabels, datasets: [{ data: weekCalories }] }}
+                    width={SCREEN_WIDTH - 64}
+                    height={200}
+                    yAxisLabel=""
+                    yAxisSuffix=""
+                    chartConfig={{
+                      backgroundColor: Colors.surface,
+                      backgroundGradientFrom: Colors.surface,
+                      backgroundGradientTo: Colors.surface,
+                      decimalPlaces: 0,
+                      color: (opacity = 1) => `rgba(230,126,34,${opacity})`,
+                      labelColor: () => Colors.textSecondary,
+                      barPercentage: 0.6,
+                      propsForBackgroundLines: { stroke: Colors.borderLight, strokeWidth: 1 },
+                    }}
+                    style={styles.chart}
+                    fromZero
+                    showValuesOnTopOfBars
+                  />
+                  <View style={styles.weekStatsRow}>
+                    <View style={styles.metricItem}>
+                      <Text style={[styles.metricValue, { color: Colors.accent }]}>{weekTotal}</Text>
+                      <Text style={styles.metricLabel}>週合計 kcal</Text>
+                    </View>
+                    <View style={styles.divider} />
+                    <View style={styles.metricItem}>
+                      <Text style={[styles.metricValue, { color: Colors.primary }]}>{weekAvg}</Text>
+                      <Text style={styles.metricLabel}>日平均 kcal</Text>
+                    </View>
+                    <View style={styles.divider} />
+                    <View style={styles.metricItem}>
+                      <Text style={styles.metricValue}>{weekDaysWithData}</Text>
+                      <Text style={styles.metricLabel}>記録日数</Text>
+                    </View>
+                  </View>
+                </>
+              )}
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.cardTitle}>週合計 PFC</Text>
+              <View style={styles.pfcBigRow}>
+                <View style={[styles.pfcBigItem, { borderColor: Colors.protein }]}>
+                  <Text style={[styles.pfcBigValue, { color: Colors.protein }]}>{Math.round(weeklyPFC.protein)}g</Text>
+                  <Text style={styles.pfcBigLabel}>タンパク質</Text>
+                </View>
+                <View style={[styles.pfcBigItem, { borderColor: Colors.fat }]}>
+                  <Text style={[styles.pfcBigValue, { color: Colors.fat }]}>{Math.round(weeklyPFC.fat)}g</Text>
+                  <Text style={styles.pfcBigLabel}>脂質</Text>
+                </View>
+                <View style={[styles.pfcBigItem, { borderColor: Colors.carbs }]}>
+                  <Text style={[styles.pfcBigValue, { color: Colors.carbs }]}>{Math.round(weeklyPFC.carbs)}g</Text>
+                  <Text style={styles.pfcBigLabel}>炭水化物</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
         {activeTab === 'progress' && (
           <View>
+            {trendData.length >= 2 && pfcTarget && (
+              <View style={styles.summaryCard}>
+                <Text style={styles.cardTitle}>過去7日のカロリー推移</Text>
+                <NutritionChart data={trendData} target={pfcTarget.targetCalories} />
+              </View>
+            )}
             {pfcTarget ? (
               <View style={styles.summaryCard}>
-                <Text style={styles.cardTitle}>今日の達成率</Text>
+                <Text style={styles.cardTitle}>{selectedDate} の達成率</Text>
                 <PFCProgressBar label="カロリー" current={totalCalories} target={pfcTarget.targetCalories} unit="kcal" color={Colors.accent} />
                 <PFCProgressBar label="タンパク質" current={totalProtein} target={pfcTarget.protein} color={Colors.protein} />
                 <PFCProgressBar label="脂質" current={totalFat} target={pfcTarget.fat} color={Colors.fat} />
@@ -467,12 +697,12 @@ export default function NutritionScreen() {
         </View>
       </Modal>
 
-      {/* Add Meal Modal */}
+      {/* Add/Edit Meal Modal */}
       <Modal
         visible={modalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => { setModalVisible(false); resetForm(); }}
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
@@ -480,13 +710,32 @@ export default function NutritionScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>食事を記録</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalTitle}>{editingMeal ? '食事を編集' : '食事を記録'}</Text>
+              <TouchableOpacity onPress={() => { setModalVisible(false); resetForm(); }}>
                 <Ionicons name="close" size={24} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* Favorites */}
+              {favoriteFoods.length > 0 && (
+                <>
+                  <Text style={styles.fieldLabel}>お気に入り食品</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.favoritesScroll}>
+                    {favoriteFoods.map((fav) => (
+                      <TouchableOpacity
+                        key={fav.id}
+                        style={styles.favoriteChip}
+                        onPress={() => applyFavorite(fav)}
+                        onLongPress={() => handleDeleteFavorite(fav.id!, fav.name)}
+                      >
+                        <Text style={styles.favoriteChipName} numberOfLines={1}>{fav.name}</Text>
+                        <Text style={styles.favoriteChipCal}>{Math.round(fav.calories)}kcal</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </>
+              )}
               {/* Search Row */}
               <View style={styles.searchRow}>
                 <TextInput
@@ -631,8 +880,15 @@ export default function NutritionScreen() {
                 </View>
               </View>
 
+              {formName.trim().length > 0 && !editingMeal && (
+                <TouchableOpacity style={styles.favAddButton} onPress={handleAddFavorite}>
+                  <Ionicons name="star-outline" size={16} color={Colors.secondary} />
+                  <Text style={styles.favAddButtonText}>お気に入りに追加</Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>保存する</Text>
+                <Text style={styles.saveButtonText}>{editingMeal ? '更新する' : '保存する'}</Text>
               </TouchableOpacity>
               <View style={{ height: 20 }} />
             </ScrollView>
@@ -667,6 +923,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   addButtonText: { color: Colors.textOnPrimary, fontWeight: '700', fontSize: 14 },
+  dateNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  dateNavArrow: { padding: 4 },
+  dateNavArrowDisabled: { opacity: 0.3 },
+  dateNavText: { fontSize: 14, fontWeight: '600', color: Colors.text },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
@@ -681,7 +950,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabItemActive: { borderBottomColor: Colors.primary },
-  tabItemText: { fontSize: 13, fontWeight: '500', color: Colors.textMuted },
+  tabItemText: { fontSize: 12, fontWeight: '500', color: Colors.textMuted },
   tabItemTextActive: { color: Colors.primary, fontWeight: '700' },
   container: { flex: 1 },
   contentContainer: { padding: 16 },
@@ -744,7 +1013,38 @@ const styles = StyleSheet.create({
   mealItemLeft: { flex: 1 },
   mealName: { fontSize: 14, fontWeight: '500', color: Colors.text },
   mealDetails: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  editButton: { padding: 6 },
   deleteButton: { padding: 6 },
+  chart: { borderRadius: 12, marginTop: 8 },
+  weekStatsRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginTop: 16 },
+  // Favorites
+  favoritesScroll: { marginBottom: 8 },
+  favoriteChip: {
+    backgroundColor: Colors.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    alignItems: 'center',
+    minWidth: 80,
+    maxWidth: 120,
+  },
+  favoriteChipName: { fontSize: 12, fontWeight: '600', color: Colors.text, textAlign: 'center' },
+  favoriteChipCal: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  favAddButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginTop: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.secondary,
+  },
+  favAddButtonText: { fontSize: 13, color: Colors.secondary, fontWeight: '600' },
   remainingSection: { marginTop: 16 },
   remainingTitle: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 10 },
   remainingGrid: { flexDirection: 'row', justifyContent: 'space-around' },
