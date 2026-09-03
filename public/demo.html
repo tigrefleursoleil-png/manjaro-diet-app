@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>マンジャロ ダイエット外来（デモ用ホームページ）</title>
+    <style>
+      :root {
+        --ink: #22333a;
+        --brand: #12b48a;
+        --line: #e5ecee;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN",
+          "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+        color: var(--ink);
+        background: #fff;
+        line-height: 1.85;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        background: #fffffff2;
+        backdrop-filter: blur(6px);
+      }
+      .logo { font-weight: 800; font-size: 17px; letter-spacing: 0.02em; }
+      nav { margin-left: auto; display: flex; gap: 18px; font-size: 13px; }
+      nav a { color: #4a5c63; text-decoration: none; }
+      .hero {
+        padding: 64px 24px 48px;
+        background: linear-gradient(160deg, #eefaf6, #ffffff 70%);
+        text-align: center;
+      }
+      .hero h1 { font-size: clamp(24px, 4vw, 38px); margin: 0 0 12px; line-height: 1.4; }
+      .hero p { margin: 0 auto 26px; max-width: 620px; color: #4a5c63; }
+      .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+      .btn {
+        border: 0; border-radius: 999px; padding: 13px 26px; font-size: 14px;
+        font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block;
+      }
+      .btn-primary { background: var(--brand); color: #fff; }
+      .btn-ghost { background: #fff; color: var(--brand); border: 1.5px solid var(--brand); }
+      main { max-width: 860px; margin: 0 auto; padding: 40px 24px 120px; }
+      section { padding: 24px 0; border-bottom: 1px dashed var(--line); }
+      h2 { font-size: 19px; margin: 0 0 10px; }
+      .note {
+        background: #f7fbfa; border: 1px solid var(--line); border-radius: 12px;
+        padding: 16px 18px; font-size: 13px; color: #4a5c63;
+      }
+      code { background: #f1f5f6; padding: 2px 6px; border-radius: 5px; font-size: 12.5px; }
+      pre {
+        background: #14262c; color: #d7ecf1; padding: 14px 16px; border-radius: 12px;
+        overflow-x: auto; font-size: 12.5px; line-height: 1.7;
+      }
+      footer { padding: 26px 24px; background: #14262c; color: #9fb6bd; font-size: 12px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="logo">マンジャロ ダイエット外来</span>
+      <nav>
+        <a href="#about">当院について</a>
+        <a href="#price">料金</a>
+        <a href="#flow">診察の流れ</a>
+        <a href="#faq">よくある質問</a>
+      </nav>
+    </header>
+
+    <div class="hero">
+      <h1>医師と一緒にすすめる、無理のない体重管理</h1>
+      <p>
+        このページは埋め込みウィジェットの動作確認用デモです。右下のキャラクターボタンから、
+        AIナビゲーターに質問できます。
+      </p>
+      <div class="btns">
+        <a class="btn btn-primary" href="#price">料金を見る</a>
+        <!-- ページ内の好きなボタンからも開けます -->
+        <button class="btn btn-ghost" onclick="ManjaroChat.open()">AIに質問する</button>
+      </div>
+    </div>
+
+    <main>
+      <section id="about">
+        <h2>埋め込み方法</h2>
+        <p>ホームページの <code>&lt;/body&gt;</code> の直前に、次の1行を貼るだけです。</p>
+        <pre>&lt;script src="https://chat.example.clinic/widget/manjaro-chat.js"
+        data-api="https://chat.example.clinic" defer&gt;&lt;/script&gt;</pre>
+        <div class="note">
+          <b>data-position="left"</b> で左下に表示、<b>data-teaser="off"</b> で吹き出しの自動表示をオフにできます。
+          既存のボタンから開きたいときは <code>ManjaroChat.open()</code> を呼んでください。
+          <code>ManjaroChat.ask("料金を教えて")</code> のように、質問を投げた状態で開くこともできます。
+        </div>
+      </section>
+
+      <section id="price">
+        <h2>料金（デモ表記）</h2>
+        <p>
+          このデモページ自体は知識ベースの取り込み対象ではありません。実際の運用では
+          <code>SITE_URL</code> に本番のホームページを指定してください。
+        </p>
+      </section>
+
+      <section id="flow">
+        <h2>診察の流れ（デモ表記）</h2>
+        <p>初診カウンセリング → 医師の診察 → 処方 → 定期フォロー。</p>
+      </section>
+
+      <section id="faq">
+        <h2>よくある質問</h2>
+        <p>右下のキャラクターに話しかけてみてください。</p>
+      </section>
+    </main>
+
+    <footer>© マンジャロ ダイエット外来（デモ）</footer>
+
+    <!-- ここが埋め込みタグ（同一サーバーで配信しているので data-api は省略可） -->
+    <script src="/widget/manjaro-chat.js" defer></script>
+  </body>
+</html>

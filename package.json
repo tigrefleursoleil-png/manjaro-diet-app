@@ -1,0 +1,29 @@
+{
+  "name": "manjaro-diet-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "患者からの質問に自動で答えるAIチャットボット（キャラクター会話型 / ホームページ埋め込みボタン）",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "crawl": "tsx src/cli/crawl.ts",
+    "ask": "tsx src/cli/ask.ts",
+    "search": "tsx src/cli/testsearch.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.123.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
