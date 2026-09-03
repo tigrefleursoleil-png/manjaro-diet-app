@@ -1,5 +1,5 @@
 /*!
- * マンジェ チャットウィジェット
+ * クリニック チャットウィジェット（キャラクター「あおい」）
  * ホームページに1行貼るだけで、右下にAIキャラクターのボタンを表示します。
  *
  *   <script src="https://chat.example.clinic/widget/manjaro-chat.js"
@@ -112,6 +112,13 @@
 
   var el = {};
 
+  /** 同じSVGを何度も差し込むので、clipPath の id は毎回変える */
+  var avatarSeq = 0;
+
+  /**
+   * キャラクター「あおい」: やさしい雰囲気の女性医師（白衣＋聴診器）。
+   * config の theme.avatarUrl に画像を入れれば、そちらが優先されます。
+   */
   function avatarSvg(size) {
     if (config.character.theme.avatarUrl) {
       return (
@@ -120,21 +127,45 @@
         '" alt="" width="' + size + '" height="' + size + '">'
       );
     }
+    var clip = "mj-clip-" + ++avatarSeq;
     return (
       '<svg class="mj-avatar-svg" viewBox="0 0 64 64" width="' + size + '" height="' + size +
       '" aria-hidden="true" focusable="false">' +
-      '<g><path d="M32 9c0-4 3-7 7-7 0 4-3 7-7 7z" fill="var(--mj-accent)"/>' +
-      '<path d="M32 12c-1 0-2-3-2-6h4c0 3-1 6-2 6z" fill="var(--mj-primary-dark)"/>' +
-      '<circle cx="32" cy="36" r="23" fill="var(--mj-primary)"/>' +
-      '<ellipse cx="32" cy="41" rx="16" ry="14" fill="#ffffff" opacity=".92"/>' +
-      '<circle cx="24" cy="33" r="3.6" fill="#20343a"/>' +
-      '<circle cx="40" cy="33" r="3.6" fill="#20343a"/>' +
-      '<circle cx="25.4" cy="31.6" r="1.2" fill="#ffffff"/>' +
-      '<circle cx="41.4" cy="31.6" r="1.2" fill="#ffffff"/>' +
-      '<circle cx="17.5" cy="38.5" r="2.8" fill="var(--mj-accent)" opacity=".65"/>' +
-      '<circle cx="46.5" cy="38.5" r="2.8" fill="var(--mj-accent)" opacity=".65"/>' +
-      '<path d="M27 40.5c1.6 2.2 3.2 3.2 5 3.2s3.4-1 5-3.2" stroke="#20343a" stroke-width="2.1" ' +
-      'stroke-linecap="round" fill="none"/></g></svg>'
+      '<defs><clipPath id="' + clip + '"><circle cx="32" cy="32" r="32"/></clipPath></defs>' +
+      '<g clip-path="url(#' + clip + ')">' +
+      // 背景
+      '<circle cx="32" cy="32" r="32" fill="#f4f9fd"/>' +
+      // 白衣の肩と襟
+      '<path d="M4 64c2-11 12-16 28-16s26 5 28 16z" fill="#ffffff"/>' +
+      '<path d="M24 49l8 11 8-11-4-2-4 6-4-6z" fill="#dceaf6"/>' +
+      // 首
+      '<path d="M27 40h10v9a5 5 0 0 1-10 0z" fill="#efc0a3"/>' +
+      // 後ろ髪
+      '<path d="M15 35c0-15 7-23 17-23s17 8 17 23c0 8-1 13-2 18h-4c2-9 2-16 1-21H20c-1 5-1 12 1 21h-4c-1-5-2-10-2-18z" fill="#3d2b28"/>' +
+      // 顔
+      '<ellipse cx="32" cy="30" rx="13" ry="15" fill="#f8dcc7"/>' +
+      // 前髪
+      '<path d="M18.5 29c0-12 5.5-18 13.5-18s13.5 6 13.5 18c-1.5-6-4.5-9-8.5-9.5-3.5-3-11-1.5-14.5 6z" fill="#3d2b28"/>' +
+      // 眉
+      '<path d="M25.6 26c1.3-.9 3-.9 4.2-.2" stroke="#6b4f47" stroke-width="1.1" stroke-linecap="round" fill="none"/>' +
+      '<path d="M38.4 26c-1.3-.9-3-.9-4.2-.2" stroke="#6b4f47" stroke-width="1.1" stroke-linecap="round" fill="none"/>' +
+      // 目（まつげ・ハイライト付き）
+      '<ellipse cx="27" cy="31.2" rx="1.9" ry="2.4" fill="#3a2a24"/>' +
+      '<ellipse cx="37" cy="31.2" rx="1.9" ry="2.4" fill="#3a2a24"/>' +
+      '<circle cx="27.7" cy="30.3" r=".8" fill="#ffffff"/>' +
+      '<circle cx="37.7" cy="30.3" r=".8" fill="#ffffff"/>' +
+      '<path d="M25.2 29c1.1-1 3-1 4 0" stroke="#3a2a24" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
+      '<path d="M35.2 29c1.1-1 3-1 4 0" stroke="#3a2a24" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
+      // 頬と口もと
+      '<ellipse cx="22.8" cy="35.4" rx="2.3" ry="1.5" fill="#f7a9b6" opacity=".55"/>' +
+      '<ellipse cx="41.2" cy="35.4" rx="2.3" ry="1.5" fill="#f7a9b6" opacity=".55"/>' +
+      '<path d="M31.2 34.4c.5.9 1.1.9 1.6.4" stroke="#dfae95" stroke-width="1" stroke-linecap="round" fill="none"/>' +
+      '<path d="M29.2 37.4c1.7 2.4 4.1 2.4 5.8 0" stroke="#b8635c" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
+      // 聴診器
+      '<path d="M26 48c-2 6 1 10 5 10s6-3 6-6" stroke="var(--mj-primary,#3f8fd0)" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="37.5" cy="52" r="2.8" fill="var(--mj-primary,#3f8fd0)" opacity=".85"/>' +
+      '<circle cx="37.5" cy="52" r="1.2" fill="#ffffff" opacity=".9"/>' +
+      '</g></svg>'
     );
   }
 
@@ -191,7 +222,7 @@
       ".mj-panel.open{opacity:1;transform:none;pointer-events:auto}" +
       ".mj-head{background:linear-gradient(135deg,var(--mj-primary),var(--mj-primary-dark));" +
       "color:#fff;padding:14px 16px;display:flex;align-items:center;gap:11px}" +
-      ".mj-head-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.22);" +
+      ".mj-head-avatar{width:44px;height:44px;border-radius:50%;background:#ffffff;overflow:hidden;" +
       "display:grid;place-items:center;flex:0 0 auto}" +
       ".mj-head-name{font-size:15px;font-weight:700;line-height:1.3}" +
       ".mj-head-sub{font-size:11px;opacity:.9;line-height:1.4;margin-top:2px}" +
@@ -205,7 +236,8 @@
       ".mj-body{flex:1;overflow-y:auto;padding:16px 14px 6px;background:#f7fbfa;scroll-behavior:smooth}" +
       ".mj-row{display:flex;gap:8px;margin-bottom:12px;align-items:flex-end}" +
       ".mj-row.user{flex-direction:row-reverse}" +
-      ".mj-row-avatar{width:30px;height:30px;border-radius:50%;background:var(--mj-primary);" +
+      ".mj-row-avatar{width:32px;height:32px;border-radius:50%;background:var(--mj-bubble);" +
+      "border:1px solid #d8e7f4;overflow:hidden;" +
       "display:grid;place-items:center;flex:0 0 auto}" +
       ".mj-bubble{max-width:78%;padding:10px 13px;border-radius:16px;font-size:13.5px;line-height:1.75;" +
       "white-space:pre-wrap;word-break:break-word}" +
@@ -284,7 +316,7 @@
       '<section class="mj-panel ' + position + '" role="dialog" aria-modal="false"' +
       ' aria-label="' + escapeAttr(config.character.name) + ' チャット" hidden>' +
       '<header class="mj-head">' +
-      '<span class="mj-head-avatar">' + avatarSvg(34) + "</span>" +
+      '<span class="mj-head-avatar">' + avatarSvg(42) + "</span>" +
       "<div><div class=\"mj-head-name\">" + escapeHtml(config.character.name) + "</div>" +
       '<div class="mj-head-sub">' + escapeHtml(config.character.title) + "</div>" +
       '<div class="mj-head-meta"><span class="mj-dot"></span><span class="mj-updated"></span></div></div>' +
@@ -394,7 +426,7 @@
       bubble.innerHTML = renderText(text || "");
       var avatar = document.createElement("span");
       avatar.className = "mj-row-avatar";
-      avatar.innerHTML = avatarSvg(22);
+      avatar.innerHTML = avatarSvg(30);
       row.appendChild(avatar);
     }
     row.appendChild(bubble);
@@ -407,7 +439,7 @@
     var row = document.createElement("div");
     row.className = "mj-row bot mj-typing-row";
     row.innerHTML =
-      '<span class="mj-row-avatar">' + avatarSvg(22) + "</span>" +
+      '<span class="mj-row-avatar">' + avatarSvg(30) + "</span>" +
       '<div class="mj-bubble"><span class="mj-typing"><i></i><i></i><i></i></span></div>';
     el.body.appendChild(row);
     scrollToEnd();
