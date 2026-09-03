@@ -112,11 +112,11 @@
 
   var el = {};
 
-  /** 同じSVGを何度も差し込むので、clipPath の id は毎回変える */
+  /** 同じSVGを何度も差し込むので、defs の id は毎回変える */
   var avatarSeq = 0;
 
   /**
-   * キャラクター「あおい」: やさしい雰囲気の女性医師（白衣＋聴診器）。
+   * キャラクターの既定イラスト: やわらかい印象の女性医師（白衣＋聴診器）。
    * config の theme.avatarUrl に画像を入れれば、そちらが優先されます。
    */
   function avatarSvg(size) {
@@ -127,44 +127,68 @@
         '" alt="" width="' + size + '" height="' + size + '">'
       );
     }
-    var clip = "mj-clip-" + ++avatarSeq;
+    var n = ++avatarSeq;
+    var clip = "mj-clip-" + n;
+    var bg = "mj-bg-" + n;
+    var hair = "#3a2723";
+    var hairLight = "#6d4a41";
+    var skin = "#f9ddc9";
     return (
       '<svg class="mj-avatar-svg" viewBox="0 0 64 64" width="' + size + '" height="' + size +
       '" aria-hidden="true" focusable="false">' +
-      '<defs><clipPath id="' + clip + '"><circle cx="32" cy="32" r="32"/></clipPath></defs>' +
+      '<defs>' +
+      '<clipPath id="' + clip + '"><circle cx="32" cy="32" r="32"/></clipPath>' +
+      '<linearGradient id="' + bg + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#fbfdff"/><stop offset="1" stop-color="#e7f1fa"/>' +
+      '</linearGradient>' +
+      '</defs>' +
       '<g clip-path="url(#' + clip + ')">' +
-      // 背景
-      '<circle cx="32" cy="32" r="32" fill="#f4f9fd"/>' +
-      // 白衣の肩と襟
-      '<path d="M4 64c2-11 12-16 28-16s26 5 28 16z" fill="#ffffff"/>' +
-      '<path d="M24 49l8 11 8-11-4-2-4 6-4-6z" fill="#dceaf6"/>' +
-      // 首
-      '<path d="M27 40h10v9a5 5 0 0 1-10 0z" fill="#efc0a3"/>' +
-      // 後ろ髪
-      '<path d="M15 35c0-15 7-23 17-23s17 8 17 23c0 8-1 13-2 18h-4c2-9 2-16 1-21H20c-1 5-1 12 1 21h-4c-1-5-2-10-2-18z" fill="#3d2b28"/>' +
-      // 顔
-      '<ellipse cx="32" cy="30" rx="13" ry="15" fill="#f8dcc7"/>' +
-      // 前髪
-      '<path d="M18.5 29c0-12 5.5-18 13.5-18s13.5 6 13.5 18c-1.5-6-4.5-9-8.5-9.5-3.5-3-11-1.5-14.5 6z" fill="#3d2b28"/>' +
-      // 眉
-      '<path d="M25.6 26c1.3-.9 3-.9 4.2-.2" stroke="#6b4f47" stroke-width="1.1" stroke-linecap="round" fill="none"/>' +
-      '<path d="M38.4 26c-1.3-.9-3-.9-4.2-.2" stroke="#6b4f47" stroke-width="1.1" stroke-linecap="round" fill="none"/>' +
-      // 目（まつげ・ハイライト付き）
-      '<ellipse cx="27" cy="31.2" rx="1.9" ry="2.4" fill="#3a2a24"/>' +
-      '<ellipse cx="37" cy="31.2" rx="1.9" ry="2.4" fill="#3a2a24"/>' +
-      '<circle cx="27.7" cy="30.3" r=".8" fill="#ffffff"/>' +
-      '<circle cx="37.7" cy="30.3" r=".8" fill="#ffffff"/>' +
-      '<path d="M25.2 29c1.1-1 3-1 4 0" stroke="#3a2a24" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
-      '<path d="M35.2 29c1.1-1 3-1 4 0" stroke="#3a2a24" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
-      // 頬と口もと
-      '<ellipse cx="22.8" cy="35.4" rx="2.3" ry="1.5" fill="#f7a9b6" opacity=".55"/>' +
-      '<ellipse cx="41.2" cy="35.4" rx="2.3" ry="1.5" fill="#f7a9b6" opacity=".55"/>' +
-      '<path d="M31.2 34.4c.5.9 1.1.9 1.6.4" stroke="#dfae95" stroke-width="1" stroke-linecap="round" fill="none"/>' +
-      '<path d="M29.2 37.4c1.7 2.4 4.1 2.4 5.8 0" stroke="#b8635c" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
+      '<rect width="64" height="64" fill="url(#' + bg + ')"/>' +
+      // 白衣の肩・襟もと
+      '<path d="M3 64c2.5-11.5 13-16.5 29-16.5S58.5 52.5 61 64z" fill="#ffffff"/>' +
+      '<path d="M25 48.6 32 60l7-11.4-3.4-1.8L32 53l-3.6-6.2z" fill="#dbe9f6"/>' +
+      // 首すじ
+      '<path d="M27.6 40.6h8.8v8.2a4.4 4.4 0 0 1-8.8 0z" fill="#f0c5a9"/>' +
+      '<path d="M27.6 41.6c2.2 2.2 6.6 2.2 8.8 0v2.2c-2.2 2-6.6 2-8.8 0z" fill="#e0ae93" opacity=".55"/>' +
+      // 後ろ髪（毛先を内巻きに）
+      '<path d="M14 33.4C14 18.6 21.6 10 32 10s18 8.6 18 23.4c0 8.4-.8 14.4-2.2 20.6-1.6.4-3 .2-4.4-.6 2.4-9.4 2.6-17 2-22.6H18.6c-.6 5.6-.4 13.2 2 22.6-1.4.8-2.8 1-4.4.6C14.8 47.8 14 41.8 14 33.4z" fill="' + hair + '"/>' +
+      // 顔（あご先を細く）
+      '<path d="M20.2 27.6c0-8.2 5.2-13.8 11.8-13.8s11.8 5.6 11.8 13.8c0 5.6-.7 9.6-2.5 12.7-2 3.4-5.5 5.7-9.3 5.7s-7.3-2.3-9.3-5.7c-1.8-3.1-2.5-7.1-2.5-12.7z" fill="' + skin + '"/>' +
+      // 前髪（斜めに流す）
+      '<path d="M19.4 28.6C19.4 17 24.6 11 32 11s12.6 6 12.6 17.6c-.9-5.6-2.6-9-5.2-10.6-3.4 4.2-9.4 6.6-14.6 6.9-1.6 1.2-2.6 3-3.4 5.7z" fill="' + hair + '"/>' +
+      '<path d="M25.4 19.8c2.2-2.2 4.8-3.4 7.6-3.6" stroke="' + hairLight + '" stroke-width="1.2" stroke-linecap="round" fill="none" opacity=".32"/>' +
+      // 眉（細くアーチ）
+      '<path d="M24.7 24.6c1.8-1.4 4-1.3 5.5-.1" stroke="#7d5a50" stroke-width=".85" stroke-linecap="round" fill="none"/>' +
+      '<path d="M39.3 24.6c-1.8-1.4-4-1.3-5.5-.1" stroke="#7d5a50" stroke-width=".85" stroke-linecap="round" fill="none"/>' +
+      // 二重まぶた
+      '<path d="M24.6 28.2c1.6-1.4 4-1.4 5.4-.2" stroke="#e3b89e" stroke-width=".8" stroke-linecap="round" fill="none"/>' +
+      '<path d="M39.4 28.2c-1.6-1.4-4-1.4-5.4-.2" stroke="#e3b89e" stroke-width=".8" stroke-linecap="round" fill="none"/>' +
+      // 瞳
+      '<ellipse cx="27.1" cy="31.4" rx="2.15" ry="2.8" fill="#4a3129"/>' +
+      '<ellipse cx="36.9" cy="31.4" rx="2.15" ry="2.8" fill="#4a3129"/>' +
+      '<circle cx="27.9" cy="30.4" r=".85" fill="#ffffff"/>' +
+      '<circle cx="37.7" cy="30.4" r=".85" fill="#ffffff"/>' +
+      '<circle cx="26.5" cy="32.5" r=".5" fill="#ffffff" opacity=".6"/>' +
+      '<circle cx="36.3" cy="32.5" r=".5" fill="#ffffff" opacity=".6"/>' +
+      // まつげ（目尻を少し上げる）
+      '<path d="M24.9 29.2c1.5-1.4 3.6-1.4 5 0" stroke="#3a2723" stroke-width="1.05" ' +
+      'stroke-linecap="round" fill="none"/>' +
+      '<path d="M39.1 29.2c-1.5-1.4-3.6-1.4-5 0" stroke="#3a2723" stroke-width="1.05" ' +
+      'stroke-linecap="round" fill="none"/>' +
+      '<path d="M24.4 29.4l-.9-.8" stroke="#3a2723" stroke-width=".9" stroke-linecap="round"/>' +
+      '<path d="M39.6 29.4l.9-.8" stroke="#3a2723" stroke-width=".9" stroke-linecap="round"/>' +
+      // 頬・鼻・口もと
+      '<ellipse cx="23.4" cy="35.6" rx="2.2" ry="1.4" fill="#f6a3b0" opacity=".5"/>' +
+      '<ellipse cx="40.6" cy="35.6" rx="2.2" ry="1.4" fill="#f6a3b0" opacity=".5"/>' +
+      '<path d="M31.4 34.6c.7.8 1.3.8 1.8.2" stroke="#e0ae93" stroke-width=".9" stroke-linecap="round" fill="none"/>' +
+      '<path d="M29.4 37.5c1.6-.9 3.6-.9 5.2 0-1 2.4-4.2 2.4-5.2 0z" fill="#d97f86"/>' +
+      '<path d="M29.4 37.5c1.6-.7 3.6-.7 5.2 0" stroke="#c0616c" stroke-width=".7" stroke-linecap="round" fill="none"/>' +
+      '<path d="M28.6 37c1 2.4 5.8 2.4 6.8 0" stroke="#c0616c" stroke-width=".55" stroke-linecap="round" fill="none" opacity=".45"/>' +
       // 聴診器
-      '<path d="M26 48c-2 6 1 10 5 10s6-3 6-6" stroke="var(--mj-primary,#3f8fd0)" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-      '<circle cx="37.5" cy="52" r="2.8" fill="var(--mj-primary,#3f8fd0)" opacity=".85"/>' +
-      '<circle cx="37.5" cy="52" r="1.2" fill="#ffffff" opacity=".9"/>' +
+      '<path d="M26.6 48.4c-2.2 6 .8 10.2 4.9 10.2 3.4 0 5.8-2.6 5.8-5.6" ' +
+      'stroke="var(--mj-primary,#3f8fd0)" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="37.3" cy="52" r="2.7" fill="var(--mj-primary,#3f8fd0)" opacity=".9"/>' +
+      '<circle cx="37.3" cy="52" r="1.1" fill="#ffffff" opacity=".9"/>' +
       '</g></svg>'
     );
   }

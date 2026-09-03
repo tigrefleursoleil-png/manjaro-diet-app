@@ -62,6 +62,23 @@ export const siteConfig: SiteConfig = JSON.parse(
   fs.readFileSync(path.join(CONFIG_DIR, "site.json"), "utf8"),
 ) as SiteConfig;
 
+/** 診療科ごとの言い換え辞書（任意）。無ければ既定の一般語だけを使う。 */
+export const extraSynonyms: Record<string, string[]> = (() => {
+  const file = path.join(CONFIG_DIR, "synonyms.json");
+  if (!fs.existsSync(file)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
+    const out: Record<string, string[]> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (Array.isArray(value)) out[key] = value.map(String);
+    }
+    return out;
+  } catch {
+    console.warn("[config] synonyms.json を読み込めませんでした（無視して続行します）");
+    return {};
+  }
+})();
+
 function num(name: string, fallback: number): number {
   const raw = process.env[name];
   if (raw === undefined || raw === "") return fallback;

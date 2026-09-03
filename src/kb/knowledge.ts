@@ -46,6 +46,33 @@ export function siteOutline(maxPages = 60): string {
     .join("\n");
 }
 
+/** 「〇〇について教えて」形式の質問候補を、取り込んだページから作る */
+export function suggestedQuestions(max = 4): string[] {
+  const chunkCount = new Map<string, number>();
+  for (const chunk of kb.chunks) {
+    chunkCount.set(chunk.url, (chunkCount.get(chunk.url) ?? 0) + 1);
+  }
+  const root = kb.siteUrl.replace(/\/+$/, "");
+  // 質問にしても中身が伝わらないページは候補から外す
+  const skip = /(よくある質問|q&a|faq|お知らせ|新着|ブログ|コラム|プライバシー|個人情報|サイトマップ|採用|求人)/i;
+
+  return kb.pages
+    .filter((page) => page.url.replace(/\/+$/, "") !== root && !skip.test(page.title))
+    .sort((a, b) => (chunkCount.get(b.url) ?? 0) - (chunkCount.get(a.url) ?? 0))
+    .map((page) => topicOf(page.title))
+    .filter((topic, i, all) => topic.length >= 2 && topic.length <= 14 && all.indexOf(topic) === i)
+    .slice(0, max)
+    .map((topic) => `${topic}について教えて`);
+}
+
+/** 「費用について | 〇〇クリニック」→「費用」 */
+function topicOf(title: string): string {
+  const head = title.split(/\s*[|｜/／>＞-]\s*/)[0] ?? title;
+  return head
+    .replace(/(について|のご案内|のご紹介|の案内|のごあんない|一覧|ページ)$/u, "")
+    .trim();
+}
+
 export interface KnowledgeStatus {
   siteUrl: string;
   updatedAt: string;

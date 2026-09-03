@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>アレルギー科クリニック（デモ用ホームページ）</title>
+    <title>〇〇クリニック（デモ用ホームページ）</title>
     <style>
       :root {
         --ink: #22333a;
@@ -64,23 +64,23 @@
   </head>
   <body>
     <header>
-      <span class="logo">アレルギー科クリニック</span>
+      <span class="logo">〇〇クリニック</span>
       <nav>
         <a href="#about">当院について</a>
-        <a href="#price">検査・料金</a>
+        <a href="#price">診療内容・費用</a>
         <a href="#flow">診察の流れ</a>
         <a href="#faq">よくある質問</a>
       </nav>
     </header>
 
     <div class="hero">
-      <h1>つらい症状に、根本から向き合うアレルギー診療</h1>
+      <h1>ホームページの内容を、そのままご案内します</h1>
       <p>
         このページは埋め込みウィジェットの動作確認用デモです。右下のキャラクターボタンから、
-        AIナビゲーターに質問できます。
+        ホームページの内容にもとづいてAIナビゲーターが回答します。
       </p>
       <div class="btns">
-        <a class="btn btn-primary" href="#price">検査・料金を見る</a>
+        <a class="btn btn-primary" href="#price">診療内容を見る</a>
         <!-- ページ内の好きなボタンからも開けます -->
         <button class="btn btn-ghost" onclick="ManjaroChat.open()">AIに質問する</button>
       </div>
@@ -95,21 +95,22 @@
         <div class="note">
           <b>data-position="left"</b> で左下に表示、<b>data-teaser="off"</b> で吹き出しの自動表示をオフにできます。
           既存のボタンから開きたいときは <code>ManjaroChat.open()</code> を呼んでください。
-          <code>ManjaroChat.ask("花粉症の治療について")</code> のように、質問を投げた状態で開くこともできます。
+          <code>ManjaroChat.ask("初診の流れを教えて")</code> のように、質問を投げた状態で開くこともできます。
         </div>
       </section>
 
       <section id="price">
-        <h2>検査・料金（デモ表記）</h2>
+        <h2>診療内容・費用（デモ表記）</h2>
         <p>
-          このデモページ自体は知識ベースの取り込み対象ではありません。実際の運用では
-          <code>SITE_URL</code> に本番のホームページを指定してください。
+          回答の根拠になるのは <code>SITE_URL</code> で指定したホームページの内容だけです。
+          診療科や取り扱い内容の知識はコードに書き込まれていないので、ホームページを更新すれば
+          回答もそれに追従します（このデモページ自体は取り込み対象ではありません）。
         </p>
       </section>
 
       <section id="flow">
         <h2>診察の流れ（デモ表記）</h2>
-        <p>Web予約 → 問診 → 医師の診察 → アレルギー検査 → 結果説明と治療方針のご相談。</p>
+        <p>Web予約 → 問診 → 医師の診察 → 必要に応じて検査 → 結果説明と今後のご相談。</p>
       </section>
 
       <section id="faq">
@@ -118,7 +119,7 @@
       </section>
     </main>
 
-    <footer>© アレルギー科クリニック（デモ）</footer>
+    <footer>© 〇〇クリニック（デモ）</footer>
 
     <!-- ここが埋め込みタグ（同一サーバーで配信しているので data-api は省略可） -->
     <script src="/widget/manjaro-chat.js" defer></script>
