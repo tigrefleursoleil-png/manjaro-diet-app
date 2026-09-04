@@ -116,81 +116,111 @@
   var avatarSeq = 0;
 
   /**
-   * キャラクターの既定イラスト: やわらかい印象の女性医師（白衣＋聴診器）。
+   * キャラクターの既定イラスト:
+   * 髪をゆるくまとめた女性医師（白衣＋ブルーのスクラブ＋聴診器）。
    * config の theme.avatarUrl に画像を入れれば、そちらが優先されます。
    */
   function avatarSvg(size) {
     if (config.character.theme.avatarUrl) {
       return (
         '<img class="mj-avatar-img" src="' +
-        escapeAttr(config.character.theme.avatarUrl) +
+        escapeAttr(resolveUrl(config.character.theme.avatarUrl)) +
         '" alt="" width="' + size + '" height="' + size + '">'
       );
     }
     var n = ++avatarSeq;
     var clip = "mj-clip-" + n;
     var bg = "mj-bg-" + n;
-    var hair = "#3a2723";
-    var hairLight = "#6d4a41";
-    var skin = "#f9ddc9";
+    var hair = "#2c1c18";
+    var hairSoft = "#4a302a";
+    var skin = "#eab48d";
+    var skinShade = "#d99a71";
+    var lash = "#241511";
     return (
       '<svg class="mj-avatar-svg" viewBox="0 0 64 64" width="' + size + '" height="' + size +
       '" aria-hidden="true" focusable="false">' +
       '<defs>' +
       '<clipPath id="' + clip + '"><circle cx="32" cy="32" r="32"/></clipPath>' +
       '<linearGradient id="' + bg + '" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#fbfdff"/><stop offset="1" stop-color="#e7f1fa"/>' +
+      '<stop offset="0" stop-color="#fdfbf7"/><stop offset="1" stop-color="#e9f1fa"/>' +
       '</linearGradient>' +
       '</defs>' +
       '<g clip-path="url(#' + clip + ')">' +
       '<rect width="64" height="64" fill="url(#' + bg + ')"/>' +
-      // 白衣の肩・襟もと
-      '<path d="M3 64c2.5-11.5 13-16.5 29-16.5S58.5 52.5 61 64z" fill="#ffffff"/>' +
-      '<path d="M25 48.6 32 60l7-11.4-3.4-1.8L32 53l-3.6-6.2z" fill="#dbe9f6"/>' +
-      // 首すじ
-      '<path d="M27.6 40.6h8.8v8.2a4.4 4.4 0 0 1-8.8 0z" fill="#f0c5a9"/>' +
-      '<path d="M27.6 41.6c2.2 2.2 6.6 2.2 8.8 0v2.2c-2.2 2-6.6 2-8.8 0z" fill="#e0ae93" opacity=".55"/>' +
-      // 後ろ髪（毛先を内巻きに）
-      '<path d="M14 33.4C14 18.6 21.6 10 32 10s18 8.6 18 23.4c0 8.4-.8 14.4-2.2 20.6-1.6.4-3 .2-4.4-.6 2.4-9.4 2.6-17 2-22.6H18.6c-.6 5.6-.4 13.2 2 22.6-1.4.8-2.8 1-4.4.6C14.8 47.8 14 41.8 14 33.4z" fill="' + hair + '"/>' +
-      // 顔（あご先を細く）
-      '<path d="M20.2 27.6c0-8.2 5.2-13.8 11.8-13.8s11.8 5.6 11.8 13.8c0 5.6-.7 9.6-2.5 12.7-2 3.4-5.5 5.7-9.3 5.7s-7.3-2.3-9.3-5.7c-1.8-3.1-2.5-7.1-2.5-12.7z" fill="' + skin + '"/>' +
-      // 前髪（斜めに流す）
-      '<path d="M19.4 28.6C19.4 17 24.6 11 32 11s12.6 6 12.6 17.6c-.9-5.6-2.6-9-5.2-10.6-3.4 4.2-9.4 6.6-14.6 6.9-1.6 1.2-2.6 3-3.4 5.7z" fill="' + hair + '"/>' +
-      '<path d="M25.4 19.8c2.2-2.2 4.8-3.4 7.6-3.6" stroke="' + hairLight + '" stroke-width="1.2" stroke-linecap="round" fill="none" opacity=".32"/>' +
-      // 眉（細くアーチ）
-      '<path d="M24.7 24.6c1.8-1.4 4-1.3 5.5-.1" stroke="#7d5a50" stroke-width=".85" stroke-linecap="round" fill="none"/>' +
-      '<path d="M39.3 24.6c-1.8-1.4-4-1.3-5.5-.1" stroke="#7d5a50" stroke-width=".85" stroke-linecap="round" fill="none"/>' +
-      // 二重まぶた
-      '<path d="M24.6 28.2c1.6-1.4 4-1.4 5.4-.2" stroke="#e3b89e" stroke-width=".8" stroke-linecap="round" fill="none"/>' +
-      '<path d="M39.4 28.2c-1.6-1.4-4-1.4-5.4-.2" stroke="#e3b89e" stroke-width=".8" stroke-linecap="round" fill="none"/>' +
-      // 瞳
-      '<ellipse cx="27.1" cy="31.4" rx="2.15" ry="2.8" fill="#4a3129"/>' +
-      '<ellipse cx="36.9" cy="31.4" rx="2.15" ry="2.8" fill="#4a3129"/>' +
-      '<circle cx="27.9" cy="30.4" r=".85" fill="#ffffff"/>' +
-      '<circle cx="37.7" cy="30.4" r=".85" fill="#ffffff"/>' +
-      '<circle cx="26.5" cy="32.5" r=".5" fill="#ffffff" opacity=".6"/>' +
-      '<circle cx="36.3" cy="32.5" r=".5" fill="#ffffff" opacity=".6"/>' +
-      // まつげ（目尻を少し上げる）
-      '<path d="M24.9 29.2c1.5-1.4 3.6-1.4 5 0" stroke="#3a2723" stroke-width="1.05" ' +
-      'stroke-linecap="round" fill="none"/>' +
-      '<path d="M39.1 29.2c-1.5-1.4-3.6-1.4-5 0" stroke="#3a2723" stroke-width="1.05" ' +
-      'stroke-linecap="round" fill="none"/>' +
-      '<path d="M24.4 29.4l-.9-.8" stroke="#3a2723" stroke-width=".9" stroke-linecap="round"/>' +
-      '<path d="M39.6 29.4l.9-.8" stroke="#3a2723" stroke-width=".9" stroke-linecap="round"/>' +
-      // 頬・鼻・口もと
-      '<ellipse cx="23.4" cy="35.6" rx="2.2" ry="1.4" fill="#f6a3b0" opacity=".5"/>' +
-      '<ellipse cx="40.6" cy="35.6" rx="2.2" ry="1.4" fill="#f6a3b0" opacity=".5"/>' +
-      '<path d="M31.4 34.6c.7.8 1.3.8 1.8.2" stroke="#e0ae93" stroke-width=".9" stroke-linecap="round" fill="none"/>' +
-      '<path d="M29.4 37.5c1.6-.9 3.6-.9 5.2 0-1 2.4-4.2 2.4-5.2 0z" fill="#d97f86"/>' +
-      '<path d="M29.4 37.5c1.6-.7 3.6-.7 5.2 0" stroke="#c0616c" stroke-width=".7" stroke-linecap="round" fill="none"/>' +
-      '<path d="M28.6 37c1 2.4 5.8 2.4 6.8 0" stroke="#c0616c" stroke-width=".55" stroke-linecap="round" fill="none" opacity=".45"/>' +
+
+      // 白衣の肩
+      '<path d="M2 64c3-11 13.5-16 30-16s27 5 30 16z" fill="#ffffff"/>' +
+      // ブルーのスクラブ（Vネック）
+      '<path d="M25.6 47.6 32 62l6.4-14.4-3.2-1.4L32 53l-3.2-6.8z" fill="#4d74ad"/>' +
+      '<path d="M27.4 46.6 32 57l4.6-10.4-2-1L32 51l-2.6-5.4z" fill="#5d86c0"/>' +
+      // 白衣の襟
+      '<path d="M24.6 47.4 32 62l-1.6 2H21z" fill="#f2f6fb"/>' +
+      '<path d="M39.4 47.4 32 62l1.6 2H43z" fill="#f2f6fb"/>' +
+      // 首とあごの影
+      '<path d="M27.4 39.4h9.2v9.4a4.6 4.6 0 0 1-9.2 0z" fill="' + skinShade + '"/>' +
+      '<path d="M27.4 39.4h9.2v4.2c-2.4 2-6.8 2-9.2 0z" fill="#c98c66" opacity=".45"/>' +
+      // 耳
+      '<ellipse cx="19.6" cy="31.8" rx="1.9" ry="2.6" fill="' + skinShade + '"/>' +
+      '<ellipse cx="44.4" cy="31.8" rx="1.9" ry="2.6" fill="' + skinShade + '"/>' +
+      // 顔
+      '<path d="M20.4 27.4c0-8.6 5.2-14.4 11.6-14.4s11.6 5.8 11.6 14.4c0 5.8-.8 10-2.6 13.2-2 3.6-5.4 5.9-9 5.9s-7-2.3-9-5.9c-1.8-3.2-2.6-7.4-2.6-13.2z" fill="' + skin + '"/>' +
+      // まとめ髪（トップのお団子＋ふんわりした生え際）
+      // 生え際: 中央は高く、こめかみに向かって下がる
+      '<path d="M19.8 29.4c-.5-7.6 1.3-12.8 4.6-15.8 4.4-4 12.8-4 17.2 0 3.3 3 5.1 8.2 4.6 15.8-.9-4.3-2-7.3-3.3-9-2.6-2.6-5.6-4-8.9-4-3.3 0-6.3 1.4-8.9 4-1.3 1.7-2.4 4.7-3.3 9z" fill="' + hair + '"/>' +
+      // お団子（大小2つでラフに）
+      '<ellipse cx="33.4" cy="9.2" rx="7.4" ry="5.6" fill="' + hair + '"/>' +
+      '<ellipse cx="26.6" cy="11" rx="4.6" ry="3.8" fill="' + hair + '"/>' +
+      '<path d="M28 7.8c2.6-1.8 6.4-2 9.2-.6" stroke="' + hairSoft + '" stroke-width="1.1" stroke-linecap="round" fill="none" opacity=".6"/>' +
+      // 顔まわりのおくれ毛
+      '<path d="M21.2 24.6c-1.6 3.4-2.3 7.4-2.1 11.8-1.3-4.6-1.2-9 .3-13.2z" fill="' + hair + '"/>' +
+      '<path d="M42.8 24.6c1.6 3.4 2.3 7.4 2.1 11.8 1.3-4.6 1.2-9-.3-13.2z" fill="' + hair + '"/>' +
+      '<path d="M23.4 16.6c-2.2 1.8-3.6 4.2-4.2 7.2" stroke="' + hairSoft + '" stroke-width=".85" stroke-linecap="round" fill="none" opacity=".75"/>' +
+      '<path d="M41 16.2c1.9 1.7 3.1 3.9 3.6 6.6" stroke="' + hairSoft + '" stroke-width=".8" stroke-linecap="round" fill="none" opacity=".7"/>' +
+
+      // 眉（しっかりめのアーチ）
+      '<path d="M24.3 24.2c2.2-1.7 4.9-1.6 6.6-.2" stroke="#3b2620" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
+      '<path d="M39.7 24.2c-2.2-1.7-4.9-1.6-6.6-.2" stroke="#3b2620" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
+      // 目（大きめ・こげ茶）
+      '<ellipse cx="26.9" cy="31.3" rx="2.3" ry="2.85" fill="#4b2f21"/>' +
+      '<ellipse cx="37.1" cy="31.3" rx="2.3" ry="2.85" fill="#4b2f21"/>' +
+      '<circle cx="27.9" cy="30" r="1.05" fill="#ffffff"/>' +
+      '<circle cx="38.1" cy="30" r="1.05" fill="#ffffff"/>' +
+      '<circle cx="26.1" cy="32.4" r=".55" fill="#ffffff" opacity=".65"/>' +
+      '<circle cx="36.3" cy="32.4" r=".55" fill="#ffffff" opacity=".65"/>' +
+      // まつげ（目尻をはね上げる）
+      '<path d="M24.5 29.2c1.7-1.7 3.8-1.7 5.2-.1" stroke="' + lash + '" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
+      '<path d="M39.5 29.2c-1.7-1.7-3.8-1.7-5.2-.1" stroke="' + lash + '" stroke-width="1.15" stroke-linecap="round" fill="none"/>' +
+      '<path d="M24.4 29.1 23.2 28.1" stroke="' + lash + '" stroke-width=".95" stroke-linecap="round"/>' +
+      '<path d="M39.6 29.1 40.8 28.1" stroke="' + lash + '" stroke-width=".95" stroke-linecap="round"/>' +
+      // 頬・そばかす・鼻・口もと
+      '<ellipse cx="23.4" cy="35.4" rx="2.6" ry="1.7" fill="#e07f75" opacity=".4"/>' +
+      '<ellipse cx="40.6" cy="35.4" rx="2.6" ry="1.7" fill="#e07f75" opacity=".4"/>' +
+      '<circle cx="29.4" cy="35" r=".28" fill="#b9765a" opacity=".7"/>' +
+      '<circle cx="31.4" cy="35.8" r=".28" fill="#b9765a" opacity=".7"/>' +
+      '<circle cx="34.2" cy="35.2" r=".28" fill="#b9765a" opacity=".7"/>' +
+      '<path d="M31.2 34.4c.8.9 1.5.9 2.1.2" stroke="' + skinShade + '" stroke-width="1" stroke-linecap="round" fill="none"/>' +
+      '<path d="M29.2 38c1.8-1.1 4-1.1 5.6 0-1.1 2.3-4.5 2.3-5.6 0z" fill="#c4736c"/>' +
+      '<path d="M29.2 38c1.8-.9 4-.9 5.6 0" stroke="#a8564f" stroke-width=".65" stroke-linecap="round" fill="none"/>' +
+      '<path d="M28.2 37.4c1.2 2.6 6.4 2.6 7.6 0" stroke="#a8564f" stroke-width=".5" stroke-linecap="round" fill="none" opacity=".4"/>' +
+
+      // ネックレス
+      '<path d="M28 47.4c1.6 2.4 6.4 2.4 8 0" stroke="#e0b25e" stroke-width=".6" fill="none"/>' +
       // 聴診器
-      '<path d="M26.6 48.4c-2.2 6 .8 10.2 4.9 10.2 3.4 0 5.8-2.6 5.8-5.6" ' +
-      'stroke="var(--mj-primary,#3f8fd0)" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
-      '<circle cx="37.3" cy="52" r="2.7" fill="var(--mj-primary,#3f8fd0)" opacity=".9"/>' +
-      '<circle cx="37.3" cy="52" r="1.1" fill="#ffffff" opacity=".9"/>' +
+      '<path d="M25.4 47.6c-2.6 6.6.6 11.4 5.2 11.4 3.8 0 6.4-2.8 6.4-6.2" ' +
+      'stroke="#3b4650" stroke-width="1.9" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="37" cy="52" r="3" fill="#8e9aa6"/>' +
+      '<circle cx="37" cy="52" r="1.6" fill="#5d6b78"/>' +
+      // 名札
+      '<rect x="43.6" y="52" width="6.2" height="8" rx="1" fill="#eaf1f8" stroke="#c9d8e6" stroke-width=".5"/>' +
+      '<path d="M46.7 52v-1.6" stroke="#4d74ad" stroke-width="1" stroke-linecap="round"/>' +
       '</g></svg>'
     );
+  }
+
+  /** avatarUrl に "/avatar.png" のような相対パスが来たら、APIサーバー基準で解決する */
+  function resolveUrl(url) {
+    if (/^(https?:|data:)/i.test(url) || !apiBase) return url;
+    return apiBase + (url.charAt(0) === "/" ? "" : "/") + url;
   }
 
   function styles() {
