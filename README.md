@@ -50,8 +50,8 @@ SITE_URL=https://あなたのホームページ    # ここを起点に同一ド
 ALLOWED_ORIGINS=https://あなたのホームページ
 ```
 
-本番サーバーへの移行手順は **[DEPLOY.md](DEPLOY.md)** にまとめています
-（用意するもの・Docker/systemd/PaaS別の手順・HTTPS・公開前チェックリスト・運用・トラブル対応）。
+公開（本番移行）の手順は **[DEPLOY.md](DEPLOY.md)** にまとめています。
+サーバーの知識がなくても進められる Render の手順を先頭に、VPS/Docker・systemd・他のPaaSも記載。
 
 ```bash
 npm run build && npm start
