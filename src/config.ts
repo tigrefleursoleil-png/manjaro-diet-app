@@ -52,6 +52,8 @@ export interface SiteConfig {
       accent: string;
       bubble: string;
       avatarUrl: string;
+      /** 画像を丸枠に収めるときの表示位置（CSS object-position）。例 "center 28%" */
+      avatarFocus?: string;
     };
     suggestions: string[];
   };

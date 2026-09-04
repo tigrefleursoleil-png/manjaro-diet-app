@@ -33,7 +33,8 @@
       "primaryDark": "#2b6ea8",
       "accent": "#ffc2cf",
       "bubble": "#eef5fc",
-      "avatarUrl": ""
+      "avatarUrl": "/avatar.png",
+      "avatarFocus": "center 28%"
     },
     "suggestions": []
   },

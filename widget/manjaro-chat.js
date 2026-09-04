@@ -122,10 +122,11 @@
    */
   function avatarSvg(size) {
     if (config.character.theme.avatarUrl) {
+      // 元画像は加工せず、そのまま <img> で表示する（丸い枠に収めるだけ）
       return (
         '<img class="mj-avatar-img" src="' +
         escapeAttr(resolveUrl(config.character.theme.avatarUrl)) +
-        '" alt="" width="' + size + '" height="' + size + '">'
+        '" alt="" data-size="' + size + '">'
       );
     }
     var n = ++avatarSeq;
@@ -251,7 +252,9 @@
       "transition:transform .18s ease,box-shadow .18s ease;position:relative}" +
       ".mj-launcher:hover .mj-fab{transform:translateY(-3px) scale(1.04);box-shadow:0 14px 30px rgba(15,60,50,.34)}" +
       ".mj-launcher:focus-visible .mj-fab{outline:3px solid var(--mj-primary-dark);outline-offset:3px}" +
-      ".mj-fab .mj-avatar-svg,.mj-fab .mj-avatar-img{border-radius:50%;display:block}" +
+      ".mj-fab .mj-avatar-svg{border-radius:50%;display:block}" +
+      ".mj-avatar-img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" +
+      "object-position:" + (t.avatarFocus || "center 28%") + "}" +
       ".mj-fab-label{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);" +
       "background:#fff;color:var(--mj-primary-dark);font-size:10px;font-weight:700;" +
       "padding:2px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.14);white-space:nowrap}" +
@@ -403,6 +406,20 @@
     el.reset = wrap.querySelector(".mj-reset");
     el.updated = wrap.querySelector(".mj-updated");
     el.disclaimer = wrap.querySelector(".mj-disclaimer");
+
+    // 画像が見つからない/読み込めない場合は、同梱のイラストに切り替える
+    wrap.addEventListener(
+      "error",
+      function (event) {
+        var img = event.target;
+        if (!img || !img.classList || !img.classList.contains("mj-avatar-img")) return;
+        config.character.theme.avatarUrl = "";
+        var holder = document.createElement("span");
+        holder.innerHTML = avatarSvg(Number(img.getAttribute("data-size")) || 32);
+        if (img.parentNode && holder.firstChild) img.parentNode.replaceChild(holder.firstChild, img);
+      },
+      true,
+    );
 
     el.disclaimer.textContent = config.disclaimer;
     renderUpdated();
