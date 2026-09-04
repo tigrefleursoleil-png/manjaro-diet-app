@@ -1,0 +1,14 @@
+services:
+  chat:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # 前段に nginx などを置く場合は "127.0.0.1:8787:8787" にして外部公開を防ぐ
+      - "8787:8787"
+    volumes:
+      # 知識ベース・会話ログを永続化（コンテナを作り直しても消えない）
+      - ./data:/app/data
+      # 設定とキャラクター画像は再ビルドなしで差し替えられるようにする
+      - ./config:/app/config:ro
+      - ./public:/app/public:ro

@@ -8,6 +8,8 @@ import { sanitizeUserMessage } from "./chat/safety.js";
 
 const app = express();
 app.disable("x-powered-by");
+// リバースプロキシ越しに動かす場合、レート制限が正しく効くよう実IPを見る
+if (env.trustProxy) app.set("trust proxy", env.trustProxy);
 app.use(express.json({ limit: "32kb" }));
 
 /* ---------------------------- CORS ---------------------------- */
@@ -55,6 +57,11 @@ setInterval(() => {
 }, 60_000).unref();
 
 /* ---------------------------- API ---------------------------- */
+
+/** ロードバランサ・Docker のヘルスチェック用 */
+app.get("/healthz", (_req, res) => {
+  res.json({ ok: true, ready: knowledge.status().ready });
+});
 
 app.get("/api/config", (_req, res) => {
   const { character, clinic, policy } = siteConfig;

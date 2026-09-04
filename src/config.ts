@@ -116,6 +116,8 @@ export const env = {
   model: process.env["BOT_MODEL"] ?? "claude-opus-5",
   effort: effortLevel(process.env["BOT_EFFORT"]),
   adminToken: process.env["ADMIN_TOKEN"] ?? "",
+  // 例: "1"（前段プロキシ1段）/ "loopback" / 未設定なら無効
+  trustProxy: process.env["TRUST_PROXY"] ?? "",
   rateLimitPerMin: num("RATE_LIMIT_PER_MIN", 12),
   logConversations: bool("LOG_CONVERSATIONS", true),
   hasApiKey: Boolean(

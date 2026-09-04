@@ -50,7 +50,8 @@ SITE_URL=https://あなたのホームページ    # ここを起点に同一ド
 ALLOWED_ORIGINS=https://あなたのホームページ
 ```
 
-本番:
+本番サーバーへの移行手順は **[DEPLOY.md](DEPLOY.md)** にまとめています
+（用意するもの・Docker/systemd/PaaS別の手順・HTTPS・公開前チェックリスト・運用・トラブル対応）。
 
 ```bash
 npm run build && npm start
@@ -206,6 +207,9 @@ curl -X POST https://chat.example.clinic/api/admin/refresh -H "x-admin-token: $A
 config/site.json          医院情報・キャラクター設定・免責文（ここを編集すれば運用できます）
 public/avatar.png         キャラクター画像（ここに置くだけで表示されます。無ければ同梱イラスト）
 config/synonyms.json      任意。診療科ごとの言い換え辞書（example をコピーして使用）
+Dockerfile / docker-compose.yml   本番用（data/ を永続化、config・public はマウント）
+deploy/                   systemd ユニットと nginx 設定の例
+DEPLOY.md                 本番移行の手順書
 src/
   server.ts               Express サーバー（API・SSE・静的配信・定期クロール）
   config.ts               .env と site.json の読み込み
